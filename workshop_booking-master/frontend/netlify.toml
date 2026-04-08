@@ -1,0 +1,11 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API proxy - update BACKEND_URL in environment variables
+# Default: assumes same-domain backup, but use env var for flexibility

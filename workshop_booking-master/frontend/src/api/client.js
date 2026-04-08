@@ -1,8 +1,13 @@
 import axios from 'axios';
 
-// Create axios instance with baseURL='/api'
+// Determine API base URL
+// In production, use VITE_API_URL environment variable
+// In development, use '/api' proxy
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+
+// Create axios instance
 const client = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   withCredentials: true, // Important for session cookies
 });
 

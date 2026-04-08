@@ -30,12 +30,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.10/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'smvfixi&v4mrulp2wvxp)kwjf^yqv-3h+f+nu5m)&=o=7(nlk1'
+SECRET_KEY = config('DJANGO_SECRET_KEY', default='dev-key-change-in-production')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default='False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
 
 # Application definition
 
@@ -57,6 +57,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Static file serving
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -136,7 +137,9 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATIC_ROOT = 'workshop_app/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 LOGIN_URL = '/workshop/login/'
 
@@ -174,9 +177,19 @@ SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_AGE = 3600
 
 # === React Frontend (DRF + CORS) ===
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
-]
+# Production: set CORS_ALLOWED_ORIGINS env var
+# Development: allow localhost
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000',
+    ]
+else:
+    cors_origins = config('CORS_ALLOWED_ORIGINS', default='')
+    CORS_ALLOWED_ORIGINS = cors_origins.split(',') if cors_origins else []
+
 CORS_ALLOW_CREDENTIALS = True
 
 REST_FRAMEWORK = {

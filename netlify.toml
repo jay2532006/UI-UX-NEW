@@ -1,0 +1,19 @@
+# netlify.toml — Netlify deployment configuration
+# Place at the repo root (or can be in the frontend subdirectory).
+
+[build]
+  # The frontend source is in the nested subdirectory
+  base    = "workshop_booking-master/frontend"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  VITE_API_URL = "https://ui-ux-newfossee-workshop-backend.onrender.com/api"
+
+# SPA routing — redirect all requests to index.html so React Router handles them
+# Without this, refreshing any page other than / gives a 404 on Netlify
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

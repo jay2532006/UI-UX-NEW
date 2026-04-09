@@ -24,7 +24,7 @@ export default function RegisterPage() {
     email: '',
     username: '',
     password: '',
-    password_confirm: '',
+    confirm_password: '',
     first_name: '',
     last_name: '',
     institute: '',
@@ -47,12 +47,12 @@ export default function RegisterPage() {
         setToast({ type: 'error', message: 'Please fill all required fields' });
         return;
       }
-      if (formData.password !== formData.password_confirm) {
+      if (formData.password !== formData.confirm_password) {
         setToast({ type: 'error', message: 'Passwords do not match' });
         return;
       }
     } else if (step === 2) {
-      if (!formData.first_name || !formData.institute || !formData.department || !formData.phone_number) {
+      if (!formData.title || !formData.first_name || !formData.institute || !formData.department || !formData.phone_number) {
         setToast({ type: 'error', message: 'Please fill all required fields' });
         return;
       }
@@ -66,8 +66,8 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.state) {
-      setToast({ type: 'error', message: 'Please select a state' });
+    if (!formData.location || !formData.state) {
+      setToast({ type: 'error', message: 'Please provide location and state' });
       return;
     }
 
@@ -171,14 +171,14 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label htmlFor="password_confirm" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-700 mb-1">
                   Confirm Password
                 </label>
                 <input
-                  id="password_confirm"
+                  id="confirm_password"
                   type="password"
-                  name="password_confirm"
-                  value={formData.password_confirm}
+                  name="confirm_password"
+                  value={formData.confirm_password}
                   onChange={handleInputChange}
                   placeholder="••••••••"
                   className="w-full h-[52px] px-4 rounded-xl border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
@@ -191,6 +191,29 @@ export default function RegisterPage() {
           {/* Step 2: Personal Info */}
           {step === 2 && (
             <>
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                  Title
+                </label>
+                <select
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleInputChange}
+                  className="w-full h-[52px] px-4 rounded-xl border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
+                  required
+                >
+                  <option value="">Select title...</option>
+                  <option value="Professor">Prof.</option>
+                  <option value="Doctor">Dr.</option>
+                  <option value="Mr">Mr.</option>
+                  <option value="Mrs">Mrs.</option>
+                  <option value="Miss">Ms.</option>
+                  <option value="Shriman">Shri</option>
+                  <option value="Shrimati">Smt</option>
+                  <option value="Kumari">Ku</option>
+                </select>
+              </div>
               <div>
                 <label htmlFor="first_name" className="block text-sm font-medium text-gray-700 mb-1">
                   First Name
@@ -298,6 +321,22 @@ export default function RegisterPage() {
           {/* Step 3: Location & T&C */}
           {step === 3 && (
             <>
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                  City / Location
+                </label>
+                <input
+                  id="location"
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  placeholder="E.g. Mumbai"
+                  className="w-full h-[52px] px-4 rounded-xl border-2 border-gray-300 focus:border-fossee-blue focus:outline-none mb-4"
+                  required
+                />
+              </div>
+
               <div>
                 <label htmlFor="state" className="block text-sm font-medium text-gray-700 mb-1">
                   State

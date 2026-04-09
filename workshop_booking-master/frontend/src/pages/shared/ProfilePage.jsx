@@ -49,13 +49,13 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const response = await client.put('/profile/', formData);
+      await client.put('/profile/', formData);
       setToast({
         type: 'success',
         message: 'Profile updated successfully!',
       });
       setEditMode(false);
-    } catch (error) {
+    } catch {
       setToast({
         type: 'error',
         message: 'Failed to update profile',

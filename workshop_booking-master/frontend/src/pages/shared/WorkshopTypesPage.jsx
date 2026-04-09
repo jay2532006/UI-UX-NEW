@@ -31,7 +31,7 @@ export default function WorkshopTypesPage() {
         setWorkshopTypes((prev) => [...prev, ...(data.results || [])]);
       }
       setNextPage(data.next || null);
-    } catch (error) {
+    } catch {
       setToast({
         type: 'error',
         message: 'Failed to load workshop types',

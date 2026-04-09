@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,8 +14,34 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #EEF4FB;
+  background:
+    radial-gradient(circle at 10% 10%, rgba(247, 148, 29, 0.12), transparent 35%),
+    radial-gradient(circle at 85% 15%, rgba(0, 56, 101, 0.12), transparent 35%),
+    linear-gradient(180deg, #f6faff 0%, #eef4fb 55%, #e8f0fb 100%);
   color: #1a1a2e;
+}
+
+::selection {
+  background-color: #003865;
+  color: #ffffff;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #e6edf7;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #9fb5cf;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7f9dbf;
 }
 
 /* Skip to main content link */
@@ -38,4 +64,24 @@ textarea:focus-visible {
   outline-color: #2563eb;
   outline-width: 2px;
   outline-offset: 2px;
+}
+
+input,
+select,
+textarea {
+  transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+
+@layer utilities {
+  .surface-grid {
+    background-image:
+      linear-gradient(to right, rgba(0, 56, 101, 0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(0, 56, 101, 0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .glass-nav {
+    background-color: rgba(0, 56, 101, 0.92);
+    backdrop-filter: blur(8px);
+  }
 }

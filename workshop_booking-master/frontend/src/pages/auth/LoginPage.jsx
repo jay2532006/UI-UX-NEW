@@ -7,7 +7,7 @@ import Toast from '../../components/ui/Toast';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login, role } = useAuth();
+  const { login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);

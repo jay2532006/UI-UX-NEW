@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import client from '../../api/client';
 import Card from '../../components/ui/Card';
@@ -29,9 +29,9 @@ export default function StatisticsPage() {
 
   useEffect(() => {
     fetchStats();
-  }, [filters]);
+  }, [fetchStats]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -42,7 +42,7 @@ export default function StatisticsPage() {
 
       const response = await client.get(`/stats/public/?${params.toString()}`);
       setStats(response.data);
-    } catch (error) {
+    } catch {
       setToast({
         type: 'error',
         message: 'Failed to load statistics',
@@ -50,7 +50,7 @@ export default function StatisticsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters.from_date, filters.to_date, filters.state, filters.workshop_type]);
 
   const handleDownloadCSV = () => {
     const params = new URLSearchParams();
@@ -74,17 +74,18 @@ export default function StatisticsPage() {
         <meta name="keywords" content="FOSSEE workshops, statistics, India, workshop data" />
       </Helmet>
 
-      <div className="min-h-screen bg-fossee-light p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="min-h-screen bg-fossee-light surface-grid p-4 md:p-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="mt-4">
-          <h1 className="text-2xl font-semibold text-gray-900">Workshop Statistics</h1>
-          <p className="text-gray-600 text-sm mt-1">FOSSEE workshop data across India</p>
+        <div className="mt-4 rounded-2xl bg-white/85 border border-slate-200/70 shadow-sm p-5 md:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-fossee-orange">Analytical Overview</p>
+          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mt-1">Workshop Statistics</h1>
+          <p className="text-slate-600 text-sm mt-2">FOSSEE workshop data across India</p>
         </div>
 
         {/* Filters */}
         <Card className="space-y-4">
-          <h3 className="font-semibold">Filters</h3>
+          <h3 className="font-bold tracking-tight text-slate-900">Filters</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label htmlFor="from-date" className="block text-sm font-medium text-gray-700 mb-1">
@@ -95,7 +96,7 @@ export default function StatisticsPage() {
                 type="date"
                 value={filters.from_date}
                 onChange={(e) => setFilters({ ...filters, from_date: e.target.value })}
-                className="w-full h-[44px] px-3 rounded-lg border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
+                className="w-full h-[44px] px-3 rounded-lg border-2 border-slate-300 bg-white focus:border-fossee-blue focus:outline-none"
               />
             </div>
             <div>
@@ -107,7 +108,7 @@ export default function StatisticsPage() {
                 type="date"
                 value={filters.to_date}
                 onChange={(e) => setFilters({ ...filters, to_date: e.target.value })}
-                className="w-full h-[44px] px-3 rounded-lg border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
+                className="w-full h-[44px] px-3 rounded-lg border-2 border-slate-300 bg-white focus:border-fossee-blue focus:outline-none"
               />
             </div>
             <div>
@@ -118,7 +119,7 @@ export default function StatisticsPage() {
                 id="state"
                 value={filters.state}
                 onChange={(e) => setFilters({ ...filters, state: e.target.value })}
-                className="w-full h-[44px] px-3 rounded-lg border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
+                className="w-full h-[44px] px-3 rounded-lg border-2 border-slate-300 bg-white focus:border-fossee-blue focus:outline-none"
               >
                 <option value="">All States</option>
                 {INDIAN_STATES.map((state) => (
@@ -137,7 +138,7 @@ export default function StatisticsPage() {
                   id="type"
                   value={filters.workshop_type}
                   onChange={(e) => setFilters({ ...filters, workshop_type: e.target.value })}
-                  className="w-full h-[44px] px-3 rounded-lg border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
+                  className="w-full h-[44px] px-3 rounded-lg border-2 border-slate-300 bg-white focus:border-fossee-blue focus:outline-none"
                 >
                   <option value="">All Types</option>
                   {stats.filters.workshop_types.map((type) => (
@@ -166,9 +167,9 @@ export default function StatisticsPage() {
         ) : stats ? (
           <>
             {/* Total Workshops Card */}
-            <Card className="bg-fossee-blue text-white">
+            <Card className="bg-gradient-to-r from-fossee-blue to-blue-900 text-white border-blue-950/30">
               <div className="text-center">
-                <div className="text-4xl font-bold">{stats.total_workshops}</div>
+                <div className="text-4xl font-black tracking-tight">{stats.total_workshops}</div>
                 <div className="text-sm mt-1 opacity-90">Total Workshops</div>
               </div>
             </Card>
@@ -176,11 +177,11 @@ export default function StatisticsPage() {
             {/* By State */}
             {stats.ws_states && stats.ws_states.length > 0 && (
               <Card>
-                <h3 className="font-semibold mb-4">Workshops by State (Top 10)</h3>
+                <h3 className="font-bold tracking-tight text-slate-900 mb-4">Workshops by State (Top 10)</h3>
                 <div className="space-y-2">
                   {stats.ws_states.slice(0, 10).map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between">
-                      <span className="text-sm">{item}</span>
+                      <span className="text-sm text-slate-700">{item}</span>
                       <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-fossee-blue h-2 rounded-full"
@@ -189,7 +190,7 @@ export default function StatisticsPage() {
                           }}
                         ></div>
                       </div>
-                      <span className="text-sm font-semibold text-gray-700 w-12 text-right">
+                      <span className="text-sm font-semibold text-slate-700 w-12 text-right">
                         {stats.ws_count[idx]}
                       </span>
                     </div>
@@ -201,11 +202,11 @@ export default function StatisticsPage() {
             {/* By Workshop Type */}
             {stats.ws_type && stats.ws_type.length > 0 && (
               <Card>
-                <h3 className="font-semibold mb-4">Workshops by Type</h3>
+                <h3 className="font-bold tracking-tight text-slate-900 mb-4">Workshops by Type</h3>
                 <div className="space-y-3">
                   {stats.ws_type.map((type, idx) => (
                     <div key={idx} className="flex items-center justify-between">
-                      <span className="text-sm">{type}</span>
+                      <span className="text-sm text-slate-700">{type}</span>
                       <div className="w-32 bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-fossee-orange h-2 rounded-full"
@@ -214,7 +215,7 @@ export default function StatisticsPage() {
                           }}
                         ></div>
                       </div>
-                      <span className="text-sm font-semibold text-gray-700 w-12 text-right">
+                      <span className="text-sm font-semibold text-slate-700 w-12 text-right">
                         {stats.ws_type_count[idx]}
                       </span>
                     </div>
@@ -226,12 +227,12 @@ export default function StatisticsPage() {
             {/* Workshops List */}
             {stats.workshops && stats.workshops.length > 0 && (
               <Card>
-                <h3 className="font-semibold mb-4">Latest Workshops</h3>
+                <h3 className="font-bold tracking-tight text-slate-900 mb-4">Latest Workshops</h3>
                 <div className="space-y-2">
                   {stats.workshops.map((w) => (
-                    <div key={w.id} className="p-3 bg-gray-50 rounded-lg text-sm">
-                      <p className="font-medium">{w.workshop_type?.name}</p>
-                      <p className="text-xs text-gray-600">
+                    <div key={w.id} className="p-3 bg-slate-50 border border-slate-200/70 rounded-lg text-sm">
+                      <p className="font-semibold text-slate-900">{w.workshop_type?.name}</p>
+                      <p className="text-xs text-slate-600">
                         {w.coordinator?.profile?.state} • {new Date(w.date).toLocaleDateString()}
                       </p>
                     </div>

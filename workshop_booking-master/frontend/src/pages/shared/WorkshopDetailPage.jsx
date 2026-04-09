@@ -27,10 +27,10 @@ export default function WorkshopDetailPage() {
         const response = await client.get(`/workshops/${id}/`);
         setWorkshop(response.data);
         setComments(response.data.comments || []);
-      } catch (error) {
+      } catch (err) {
         setToast({
           type: 'error',
-          message: error.response?.status === 404
+          message: err.response?.status === 404
             ? 'Workshop not found'
             : 'Failed to load workshop details',
         });
@@ -48,7 +48,7 @@ export default function WorkshopDetailPage() {
       });
       setComments((prev) => [...prev, response.data]);
       setToast({ type: 'success', message: 'Comment added' });
-    } catch (error) {
+    } catch {
       setToast({ type: 'error', message: 'Failed to add comment' });
     }
   };

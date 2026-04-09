@@ -8,7 +8,7 @@ import BottomNav from './BottomNav';
  */
 export default function PageWrapper({ children }) {
   return (
-    <div className="min-h-screen bg-fossee-light flex flex-col">
+    <div className="min-h-screen bg-fossee-light surface-grid flex flex-col">
       {/* Skip to main content link - must be first focusable element */}
       <a 
         href="#main-content" 

@@ -32,7 +32,7 @@ export default function WorkshopManagePage() {
         setNewDate(response.data.date);
         // Comments are embedded in the detail response
         setComments(response.data.comments || []);
-      } catch (error) {
+      } catch {
         setToast({
           type: 'error',
           message: 'Failed to load workshop details',
@@ -60,10 +60,10 @@ export default function WorkshopManagePage() {
         type: 'success',
         message: 'Workshop date updated',
       });
-    } catch (error) {
+    } catch (err) {
       setToast({
         type: 'error',
-        message: error.response?.data?.error || 'Failed to update date',
+        message: err.response?.data?.error || 'Failed to update date',
       });
     }
   };
@@ -76,7 +76,7 @@ export default function WorkshopManagePage() {
         message: 'Workshop deleted',
       });
       setTimeout(() => navigate('/instructor/dashboard'), 1500);
-    } catch (error) {
+    } catch {
       setToast({
         type: 'error',
         message: 'Failed to delete workshop',
@@ -96,7 +96,7 @@ export default function WorkshopManagePage() {
         type: 'success',
         message: 'Comment added',
       });
-    } catch (error) {
+    } catch {
       setToast({
         type: 'error',
         message: 'Failed to add comment',

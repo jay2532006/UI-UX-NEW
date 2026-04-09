@@ -18,21 +18,21 @@ export default function Card({
 }) {
   return (
     <div
-      className={`rounded-2xl shadow-sm bg-white p-4 ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''} ${className}`}
+      className={`rounded-2xl border border-slate-200/70 shadow-sm bg-white/95 p-4 ${onClick ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5 hover:border-blue-200 transition-all duration-200' : ''} ${className}`}
       onClick={onClick}
     >
       <div className="flex justify-between items-start gap-4 mb-3">
         <div className="flex-1">
-          {title && <h3 className="font-semibold text-lg text-gray-900">{title}</h3>}
-          {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
+          {title && <h3 className="font-bold text-lg tracking-tight text-slate-900">{title}</h3>}
+          {subtitle && <p className="text-sm text-slate-600">{subtitle}</p>}
         </div>
         {badge && (
-          <span className="whitespace-nowrap bg-fossee-orange text-white text-xs px-2 py-1 rounded-full">
+          <span className="whitespace-nowrap bg-fossee-orange/15 text-fossee-orange-dark text-xs font-semibold px-2.5 py-1 rounded-full border border-fossee-orange/30">
             {badge}
           </span>
         )}
       </div>
-      {children && <div className="text-gray-700">{children}</div>}
+      {children && <div className="text-slate-700">{children}</div>}
     </div>
   );
 }

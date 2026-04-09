@@ -1,9 +1,9 @@
 import React, { createContext, useState, useEffect } from 'react';
 import client from '../api/client';
 
-export const AuthContext = createContext();
+const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
           role: userData.profile?.position || 'coordinator', // 'coordinator' or 'instructor'
         });
         setIsAuthenticated(true);
-      } catch (error) {
+      } catch {
         // User not authenticated (401 or network error)
         setUser(null);
         setIsAuthenticated(false);
@@ -62,10 +62,10 @@ export const AuthProvider = ({ children }) => {
       setIsAuthenticated(true);
       // Return role so callers can navigate immediately without a second render
       return { success: true, role: userRole };
-    } catch (error) {
+    } catch (err) {
       return {
         success: false,
-        error: error.response?.data?.error || 'Login failed',
+        error: err.response?.data?.error || 'Login failed',
       };
     }
   };
@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setIsAuthenticated(false);
       return { success: true };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Logout failed' };
     }
   };
@@ -91,10 +91,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await client.post('/auth/register/', userData);
       return { success: true, message: response.data?.detail };
-    } catch (error) {
+    } catch (err) {
       return {
         success: false,
-        error: error.response?.data?.detail || 'Registration failed',
+        error: err.response?.data?.detail || 'Registration failed',
       };
     }
   };
@@ -117,3 +117,5 @@ export const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+
+export { AuthContext, AuthProvider };

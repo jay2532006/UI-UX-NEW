@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { createElement } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -30,5 +30,6 @@ export const ProtectedRoute = ({ Component, requiredRoles = null }) => {
     return <Navigate to="/404" replace />;
   }
 
-  return <Component />;
+  // Render the component using createElement
+  return createElement(Component);
 };

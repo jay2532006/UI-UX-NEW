@@ -39,7 +39,7 @@ export default function ProposeWorkshopPage() {
       try {
         const response = await client.get('/workshop-types/');
         setWorkshopTypes(response.data.results || []);
-      } catch (error) {
+      } catch {
         setToast({
           type: 'error',
           message: 'Failed to load workshop types',

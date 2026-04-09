@@ -24,7 +24,7 @@ export default function WorkshopStatusPage() {
 
   useEffect(() => {
     fetchWorkshops(activeFilter);
-  }, [activeFilter]);
+  }, [activeFilter, fetchWorkshops]);
 
   useEffect(() => {
     // API already returns filtered results — just use them directly

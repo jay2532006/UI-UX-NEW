@@ -54,7 +54,8 @@ export default function LoginPage() {
             {/* Email */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Email or Username
+                Email or Username <span className="text-red-500" aria-hidden="true">*</span>
+                <span className="sr-only">(required)</span>
               </label>
               <input
                 id="username"
@@ -66,13 +67,17 @@ export default function LoginPage() {
                 required
                 disabled={loading}
                 autoComplete="username"
+                aria-required="true"
+                aria-describedby="username-help"
               />
+              <p id="username-help" className="text-xs text-gray-500 mt-1">Enter your registered email address or username</p>
             </div>
 
             {/* Password */}
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
+                Password <span className="text-red-500" aria-hidden="true">*</span>
+                <span className="sr-only">(required)</span>
               </label>
               <input
                 id="password"
@@ -84,7 +89,10 @@ export default function LoginPage() {
                 required
                 disabled={loading}
                 autoComplete="current-password"
+                aria-required="true"
+                aria-describedby="password-help"
               />
+              <p id="password-help" className="text-xs text-gray-500 mt-1">Enter your account password</p>
             </div>
 
             {/* Forgot Password Link — points to Django's built-in password reset */}

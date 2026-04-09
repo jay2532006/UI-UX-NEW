@@ -15,9 +15,16 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="hidden md:flex bg-fossee-blue text-white h-16 items-center px-6 shadow-md">
+    <nav 
+      className="hidden md:flex bg-fossee-blue text-white h-16 items-center px-6 shadow-md"
+      aria-label="Main navigation"
+    >
       {/* Logo */}
-      <Link to={role === 'instructor' ? '/instructor/dashboard' : '/dashboard'} className="font-bold text-lg">
+      <Link 
+        to={role === 'instructor' ? '/instructor/dashboard' : '/dashboard'} 
+        className="font-bold text-lg"
+        aria-label="FOSSEE Workshop Portal - Go to home"
+      >
         FOSSEE
       </Link>
 

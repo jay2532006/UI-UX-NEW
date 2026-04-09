@@ -32,15 +32,17 @@ export default function Toast({ type = 'info', message, onClose, duration = 3000
     <div
       className={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm z-50 border rounded-lg p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${colors[type]}`}
       role="alert"
+      aria-live="polite"
+      aria-atomic="true"
     >
-      <div className="flex-shrink-0">{icons[type]}</div>
+      <div className="flex-shrink-0" aria-hidden="true">{icons[type]}</div>
       <div className="flex-1 text-sm">{message}</div>
       <button
         onClick={onClose}
-        className="flex-shrink-0 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+        className="flex-shrink-0 p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-current"
         aria-label="Close notification"
       >
-        <X size={16} />
+        <X size={16} aria-hidden="true" />
       </button>
     </div>
   );

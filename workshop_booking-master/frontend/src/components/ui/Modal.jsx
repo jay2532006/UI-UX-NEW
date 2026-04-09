@@ -49,10 +49,10 @@ export default function Modal({ isOpen, onClose, title, children }) {
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-fossee-blue"
           aria-label="Close modal"
         >
-          <X size={24} />
+          <X size={24} aria-hidden="true" />
         </button>
 
         {/* Title */}

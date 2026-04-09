@@ -22,3 +22,20 @@ body {
 .skip-link {
   @apply sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-fossee-blue focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:outline-none;
 }
+
+/* Global focus-visible styles - ensure all focusable elements have visible focus indicator */
+*:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Suppress outline on elements that use focus-visible ring instead */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-color: #2563eb;
+  outline-width: 2px;
+  outline-offset: 2px;
+}

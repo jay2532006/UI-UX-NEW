@@ -1,7 +1,7 @@
 # Python dependencies for FOSSEE Workshop Booking Portal
-# Generated from the working venv - pinned for reproducible Render deploys.
+# Pinned for reproducible Render deploys (Python 3.11.9).
 
-Django==4.2.7
+Django==6.0.4
 djangorestframework==3.14.0
 django-cors-headers==4.9.0
 django-recurrence==1.11.1
@@ -14,6 +14,11 @@ whitenoise==6.6.0
 psycopg2-binary==2.9.9
 
 # Utilities
-pyaml==20.4.0
-pandas==2.1.1
-numpy==1.26.1
+pyaml==26.2.1
+pandas==3.0.2
+
+# Test
+coverage==7.13.5
+
+# Email
+sendgrid==6.10.0

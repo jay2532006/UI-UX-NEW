@@ -6,12 +6,55 @@ import Button from '../../components/ui/Button';
 import Toast from '../../components/ui/Toast';
 
 const INDIAN_STATES = [
-  'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-  'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
-  'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
-  'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
-  'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
-  'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+  { value: 'IN-AP', label: 'Andhra Pradesh' },
+  { value: 'IN-AR', label: 'Arunachal Pradesh' },
+  { value: 'IN-AS', label: 'Assam' },
+  { value: 'IN-BR', label: 'Bihar' },
+  { value: 'IN-CT', label: 'Chhattisgarh' },
+  { value: 'IN-GA', label: 'Goa' },
+  { value: 'IN-GJ', label: 'Gujarat' },
+  { value: 'IN-HR', label: 'Haryana' },
+  { value: 'IN-HP', label: 'Himachal Pradesh' },
+  { value: 'IN-JK', label: 'Jammu and Kashmir' },
+  { value: 'IN-JH', label: 'Jharkhand' },
+  { value: 'IN-KA', label: 'Karnataka' },
+  { value: 'IN-KL', label: 'Kerala' },
+  { value: 'IN-MP', label: 'Madhya Pradesh' },
+  { value: 'IN-MH', label: 'Maharashtra' },
+  { value: 'IN-MN', label: 'Manipur' },
+  { value: 'IN-ML', label: 'Meghalaya' },
+  { value: 'IN-MZ', label: 'Mizoram' },
+  { value: 'IN-NL', label: 'Nagaland' },
+  { value: 'IN-OR', label: 'Odisha' },
+  { value: 'IN-PB', label: 'Punjab' },
+  { value: 'IN-RJ', label: 'Rajasthan' },
+  { value: 'IN-SK', label: 'Sikkim' },
+  { value: 'IN-TN', label: 'Tamil Nadu' },
+  { value: 'IN-TG', label: 'Telangana' },
+  { value: 'IN-TR', label: 'Tripura' },
+  { value: 'IN-UT', label: 'Uttarakhand' },
+  { value: 'IN-UP', label: 'Uttar Pradesh' },
+  { value: 'IN-WB', label: 'West Bengal' },
+  { value: 'IN-AN', label: 'Andaman and Nicobar Islands' },
+  { value: 'IN-CH', label: 'Chandigarh' },
+  { value: 'IN-DN', label: 'Dadra and Nagar Haveli' },
+  { value: 'IN-DD', label: 'Daman and Diu' },
+  { value: 'IN-DL', label: 'Delhi' },
+  { value: 'IN-LD', label: 'Lakshadweep' },
+  { value: 'IN-PY', label: 'Puducherry' },
+];
+
+const DEPARTMENTS = [
+  { value: 'computer engineering', label: 'Computer Science & Engineering' },
+  { value: 'information technology', label: 'Information Technology' },
+  { value: 'civil engineering', label: 'Civil Engineering' },
+  { value: 'electrical engineering', label: 'Electrical Engineering' },
+  { value: 'mechanical engineering', label: 'Mechanical Engineering' },
+  { value: 'chemical engineering', label: 'Chemical Engineering' },
+  { value: 'aerospace engineering', label: 'Aerospace Engineering' },
+  { value: 'biosciences and bioengineering', label: 'Biosciences and BioEngineering' },
+  { value: 'electronics', label: 'Electronics' },
+  { value: 'energy science and engineering', label: 'Energy Science and Engineering' },
 ];
 
 export default function RegisterPage() {
@@ -262,15 +305,21 @@ export default function RegisterPage() {
                 <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
                   Department
                 </label>
-                <input
+                <select
                   id="department"
-                  type="text"
                   name="department"
                   value={formData.department}
                   onChange={handleInputChange}
                   className="w-full h-[52px] px-4 rounded-xl border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
                   required
-                />
+                >
+                  <option value="">Select department...</option>
+                  {DEPARTMENTS.map((dept) => (
+                    <option key={dept.value} value={dept.value}>
+                      {dept.label}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -351,8 +400,8 @@ export default function RegisterPage() {
                 >
                   <option value="">Select a state...</option>
                   {INDIAN_STATES.map((state) => (
-                    <option key={state} value={state}>
-                      {state}
+                    <option key={state.value} value={state.value}>
+                      {state.label}
                     </option>
                   ))}
                 </select>

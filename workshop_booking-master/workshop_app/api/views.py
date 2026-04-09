@@ -89,6 +89,7 @@ def api_register(request):
         location=data['location'],
         state=data['state'],
         position=data.get('position', 'coordinator'),
+        is_email_verified=True,  # Auto-verify so users can log in immediately
         activation_key=activation_key,
         key_expiry_time=timezone.now() + timezone.timedelta(days=1),
     )

@@ -119,7 +119,7 @@ export default function RegisterPage() {
     if (result.success) {
       setToast({
         type: 'success',
-        message: 'Registration successful! Check your email to verify your account.',
+        message: 'Registration successful! Redirecting to login...',
       });
       setTimeout(() => {
         window.location.href = '/login';

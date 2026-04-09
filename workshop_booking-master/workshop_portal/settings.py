@@ -219,3 +219,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+
+# WhiteNoise settings
+WHITENOISE_MANIFEST_STRICT = False

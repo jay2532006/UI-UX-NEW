@@ -6,7 +6,7 @@ djangorestframework==3.14.0
 django-cors-headers==4.9.0
 django-recurrence==1.11.1
 dj-database-url==2.1.0
-python-decouple==3.3
+python-decouple==3.8
 
 # Server
 gunicorn==21.2.0

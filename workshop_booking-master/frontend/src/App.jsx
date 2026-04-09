@@ -1,10 +1,11 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Spinner from './components/ui/Spinner';
+import { useAuth } from './hooks/useAuth';
 
 // Auth Pages - lazy loaded
 const LoginPage = React.lazy(() => import('./pages/auth/LoginPage'));
@@ -35,6 +36,18 @@ const LoadingFallback = () => (
   </div>
 );
 
+/**
+ * Root redirect — sends users to the right place based on auth state + role
+ */
+function RootRedirect() {
+  const { isLoading, isAuthenticated, role } = useAuth();
+
+  if (isLoading) return <LoadingFallback />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (role === 'instructor') return <Navigate to="/instructor/dashboard" replace />;
+  return <Navigate to="/dashboard" replace />;
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -43,6 +56,9 @@ function App() {
           <AuthProvider>
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
+                {/* Root redirect */}
+                <Route path="/" element={<RootRedirect />} />
+
                 {/* Public Routes */}
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />

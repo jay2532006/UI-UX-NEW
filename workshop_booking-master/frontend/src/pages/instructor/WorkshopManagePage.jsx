@@ -26,10 +26,12 @@ export default function WorkshopManagePage() {
   useEffect(() => {
     const fetchWorkshop = async () => {
       try {
+        // WorkshopDetailSerializer includes comments in the response
         const response = await client.get(`/workshops/${id}/`);
         setWorkshop(response.data);
         setNewDate(response.data.date);
-        // Fetch comments if endpoint exists
+        // Comments are embedded in the detail response
+        setComments(response.data.comments || []);
       } catch (error) {
         setToast({
           type: 'error',
@@ -48,8 +50,9 @@ export default function WorkshopManagePage() {
       return;
     }
     try {
+      // API expects { new_date: "YYYY-MM-DD" } — not { date }
       const response = await client.post(`/workshops/${id}/change-date/`, {
-        date: newDate,
+        new_date: newDate,
       });
       setWorkshop(response.data);
       setShowChangeDate(false);
@@ -60,7 +63,7 @@ export default function WorkshopManagePage() {
     } catch (error) {
       setToast({
         type: 'error',
-        message: 'Failed to update date',
+        message: error.response?.data?.error || 'Failed to update date',
       });
     }
   };
@@ -84,7 +87,11 @@ export default function WorkshopManagePage() {
 
   const handleAddComment = async (text) => {
     try {
-      await client.post(`/workshops/${id}/comments/`, { text });
+      // API CommentSerializer expects { comment: "..." } — not { text }
+      const response = await client.post(`/workshops/${id}/comments/`, {
+        comment: text,
+      });
+      setComments((prev) => [...prev, response.data]);
       setToast({
         type: 'success',
         message: 'Comment added',
@@ -98,7 +105,7 @@ export default function WorkshopManagePage() {
   };
 
   if (loading) return <PageWrapper><Spinner /></PageWrapper>;
-  if (!workshop) return <PageWrapper><div className="text-center py-12">Workshop not found</div></PageWrapper>;
+  if (!workshop) return <PageWrapper><div className="text-center py-12 text-gray-600">Workshop not found</div></PageWrapper>;
 
   return (
     <>
@@ -113,10 +120,10 @@ export default function WorkshopManagePage() {
           <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
             ← Back
           </Button>
-          <h1 className="text-2xl font-semibold text-gray-900">{workshop.workshop_type?.name}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{workshop.workshop_type_detail?.name || workshop.workshop_type?.name || 'Workshop'}</h1>
           <div className="flex items-center gap-3 mt-3">
             <WorkshopStatusBadge status={workshop.status} />
-            <span className="text-sm text-gray-600">{workshop.id}</span>
+            <span className="text-sm text-gray-500">ID: {workshop.uid || workshop.id}</span>
           </div>
         </div>
 
@@ -124,32 +131,32 @@ export default function WorkshopManagePage() {
         <Card className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-gray-500 uppercase">Date</p>
-              <p className="font-semibold">{new Date(workshop.date).toLocaleDateString()}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Date</p>
+              <p className="font-semibold">{new Date(workshop.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Coordinator</p>
-              <p className="font-semibold">{workshop.coordinator?.first_name}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Coordinator</p>
+              <p className="font-semibold">{workshop.coordinator_name || workshop.coordinator?.first_name}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Institute</p>
-              <p className="text-sm">{workshop.coordinator?.profile?.institute}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Institute</p>
+              <p className="text-sm">{workshop.coordinator?.profile?.institute || '—'}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 uppercase">Status</p>
-              <p className="text-sm">{['PENDING', 'ACCEPTED', 'REJECTED', 'DELETED'][workshop.status]}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide">Contact</p>
+              <p className="text-sm">{workshop.coordinator_email || workshop.coordinator?.email || '—'}</p>
             </div>
           </div>
 
-          {workshop.workshop_type?.description && (
+          {workshop.workshop_type_detail?.description && (
             <div className="border-t pt-4">
-              <p className="text-xs text-gray-500 uppercase mb-2">Description</p>
-              <p className="text-sm text-gray-700">{workshop.workshop_type.description}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Description</p>
+              <p className="text-sm text-gray-700">{workshop.workshop_type_detail.description}</p>
             </div>
           )}
         </Card>
 
-        {/* Actions - Only if Accepted */}
+        {/* Actions — Only if Accepted */}
         {workshop.status === 1 && (
           <div className="space-y-3">
             <Button
@@ -186,11 +193,12 @@ export default function WorkshopManagePage() {
         title="Change Workshop Date"
       >
         <div className="space-y-4">
+          <p className="text-sm text-gray-600">Select a new date for this workshop. Must be in the future.</p>
           <input
             type="date"
             value={newDate}
             onChange={(e) => setNewDate(e.target.value)}
-            min={new Date().toISOString().split('T')[0]}
+            min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
             className="w-full h-[52px] px-4 rounded-xl border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
           />
           <div className="flex gap-3">
@@ -220,7 +228,7 @@ export default function WorkshopManagePage() {
       >
         <div className="space-y-4">
           <p className="text-gray-700">
-            Are you sure you want to delete this workshop? This action cannot be undone.
+            Are you sure you want to delete this workshop? The coordinator will be notified. This action cannot be undone.
           </p>
           <div className="flex gap-3">
             <Button

@@ -23,19 +23,13 @@ export default function WorkshopStatusPage() {
   const [filteredWorkshops, setFilteredWorkshops] = useState([]);
 
   useEffect(() => {
-    const loadWorkshops = async () => {
-      await fetchWorkshops(activeFilter);
-    };
-    loadWorkshops();
+    fetchWorkshops(activeFilter);
   }, [activeFilter]);
 
   useEffect(() => {
-    if (activeFilter === null) {
-      setFilteredWorkshops(workshops);
-    } else {
-      setFilteredWorkshops(workshops.filter((w) => w.status === activeFilter));
-    }
-  }, [workshops, activeFilter]);
+    // API already returns filtered results — just use them directly
+    setFilteredWorkshops(workshops);
+  }, [workshops]);
 
   return (
     <>

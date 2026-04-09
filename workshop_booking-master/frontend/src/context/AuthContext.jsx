@@ -47,7 +47,8 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await client.post('/auth/login/', { username, password });
       const userData = response.data;
-      
+
+      const userRole = userData.profile?.position || 'coordinator';
       setUser({
         id: userData.id,
         username: userData.username,
@@ -56,10 +57,11 @@ export const AuthProvider = ({ children }) => {
         last_name: userData.last_name,
         full_name: `${userData.first_name} ${userData.last_name}`.trim(),
         profile: userData.profile,
-        role: userData.profile?.position || 'coordinator',
+        role: userRole,
       });
       setIsAuthenticated(true);
-      return { success: true };
+      // Return role so callers can navigate immediately without a second render
+      return { success: true, role: userRole };
     } catch (error) {
       return {
         success: false,

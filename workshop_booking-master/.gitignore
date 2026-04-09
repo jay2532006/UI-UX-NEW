@@ -1,47 +1,71 @@
-# Byte-compiled / optimized / DLL files
+# ── Python ────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
-
-# Distribution / packaging
+*.so
 .Python
-*.log
+build/
 develop-eggs/
+dist/
+downloads/
 eggs/
 .eggs/
 lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-log.txt
+pip-delete-this-directory.txt
 *.egg-info/
 .installed.cfg
 *.egg
-pip-log.txt
-pip-delete-this-directory.txt
+MANIFEST
 
-# Django stuff:
+# ── Virtual Environment ───────────────────────────────────────
+venv/
+env/
+ENV/
+.venv/
+
+# ── Django ────────────────────────────────────────────────────
 *.log
 local_settings.py
-
-# PyBuilder
-target/
-
-#Database
 db.sqlite3
+staticfiles/
+media/
 
-#MAC OS specific
-.DS_Store
+# ── Environment (NEVER commit secrets) ───────────────────────
+.env
+.env.local
+.env.production
+.env.*.local
+# .env.example is intentionally committed (no secrets, docs only)
 
-#Pycharm
-.idea/inspectionProfiles/
-.idea/misc.xml
-.idea/modules.xml
-.idea/workshop_portal.iml
-.idea/workspace.xml
-.idea/vcs.xml
+# ── Frontend ──────────────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
 
-#Emacs
-\#*#
-#Vim
+# ── IDEs ──────────────────────────────────────────────────────
+.idea/
+.vscode/
 *.swp
+*.swo
+*~
 
-#images/gif
-*.png
-*.gif
+# ── OS ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Testing ───────────────────────────────────────────────────
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.pytest_cache/
+
+# ── PyBuilder ─────────────────────────────────────────────────
+target/

@@ -7,7 +7,7 @@ import Toast from '../../components/ui/Toast';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, role } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,15 +19,18 @@ export default function LoginPage() {
 
     const result = await login(username, password);
     if (result.success) {
-      // Navigate based on role set in context
-      setTimeout(() => navigate('/statistics'), 500);
+      // Route based on role returned by the auth context after login
+      const destination = result.role === 'instructor'
+        ? '/instructor/dashboard'
+        : '/dashboard';
+      navigate(destination, { replace: true });
     } else {
       setToast({
         type: 'error',
         message: result.error || 'Login failed',
       });
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -62,6 +65,7 @@ export default function LoginPage() {
                 className="w-full h-[52px] px-4 rounded-xl border-2 border-gray-300 focus:border-fossee-blue focus:outline-none transition-colors"
                 required
                 disabled={loading}
+                autoComplete="username"
               />
             </div>
 
@@ -79,14 +83,18 @@ export default function LoginPage() {
                 className="w-full h-[52px] px-4 rounded-xl border-2 border-gray-300 focus:border-fossee-blue focus:outline-none transition-colors"
                 required
                 disabled={loading}
+                autoComplete="current-password"
               />
             </div>
 
-            {/* Forgot Password Link */}
+            {/* Forgot Password Link — points to Django's built-in password reset */}
             <div className="text-right">
-              <Link to="/register" className="text-sm text-fossee-blue hover:underline">
+              <a
+                href="/reset/password_reset/"
+                className="text-sm text-fossee-blue hover:underline"
+              >
                 Forgot password?
-              </Link>
+              </a>
             </div>
 
             {/* Login Button */}

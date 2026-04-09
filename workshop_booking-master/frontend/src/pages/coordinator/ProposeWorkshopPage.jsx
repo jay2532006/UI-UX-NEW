@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import client from '../../api/client';
 import PageWrapper from '../../components/layout/PageWrapper';
 import Card from '../../components/ui/Card';
@@ -11,18 +11,27 @@ import Spinner from '../../components/ui/Spinner';
 
 export default function ProposeWorkshopPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [workshopTypes, setWorkshopTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
   const [showTncModal, setShowTncModal] = useState(false);
-  
+
+  // Support pre-selection from WorkshopTypesPage navigate state
+  const preselectedType = location.state?.preselectedType || null;
+
   const [formData, setFormData] = useState({
-    workshop_type: null,
+    workshop_type: preselectedType,
     date: '',
     tnc_accepted: false,
   });
+
+  // Auto-advance to step 2 if a type was pre-selected
+  useEffect(() => {
+    if (preselectedType) setStep(2);
+  }, [preselectedType]);
 
   // Fetch workshop types on mount
   useEffect(() => {

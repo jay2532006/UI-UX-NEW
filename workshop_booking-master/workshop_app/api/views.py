@@ -520,11 +520,21 @@ def api_public_stats(request):
     ws_states, ws_count = Workshop.objects.get_workshops_by_state(workshops)
     ws_type, ws_type_count = Workshop.objects.get_workshops_by_type(workshops)
 
-    # Paginate the workshop list
+    # Paginate the workshop list — guard against empty results
     paginator = PageNumberPagination()
     paginator.page_size = 30
     page = paginator.paginate_queryset(workshops, request)
-    workshops_data = WorkshopListSerializer(page, many=True).data
+    workshops_data = WorkshopListSerializer(page or [], many=True).data
+
+    total_count = workshops.count()
+    if paginator.page is not None:
+        pagination_meta = {
+            'count': paginator.page.paginator.count,
+            'next': paginator.get_next_link(),
+            'previous': paginator.get_previous_link(),
+        }
+    else:
+        pagination_meta = {'count': total_count, 'next': None, 'previous': None}
 
     return Response({
         'workshops': workshops_data,
@@ -532,12 +542,8 @@ def api_public_stats(request):
         'ws_count': ws_count,
         'ws_type': ws_type,
         'ws_type_count': ws_type_count,
-        'total_workshops': workshops.count(),
-        'pagination': {
-            'count': paginator.page.paginator.count,
-            'next': paginator.get_next_link(),
-            'previous': paginator.get_previous_link(),
-        },
+        'total_workshops': total_count,
+        'pagination': pagination_meta,
         'filters': {
             'states': [{'code': code, 'name': name} for code, name in states if code],
             'workshop_types': list(WorkshopType.objects.values('id', 'name')),

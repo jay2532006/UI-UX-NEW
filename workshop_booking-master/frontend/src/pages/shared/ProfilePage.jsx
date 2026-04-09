@@ -15,7 +15,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
   const [formData, setFormData] = useState({
-    email: '',
     first_name: '',
     last_name: '',
     title: '',
@@ -30,7 +29,6 @@ export default function ProfilePage() {
     if (user) {
       const { profile } = user;
       setFormData({
-        email: user.email || '',
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         title: profile?.title || '',
@@ -102,19 +100,8 @@ export default function ProfilePage() {
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
-              {editMode ? (
-                <input
-                  id="email"
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full h-[44px] px-3 rounded-lg border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
-                  disabled
-                />
-              ) : (
-                <p className="text-gray-900">{user?.email}</p>
-              )}
+              {/* Email is read-only — cannot be changed after registration */}
+              <p className="text-gray-900 py-2">{user?.email}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

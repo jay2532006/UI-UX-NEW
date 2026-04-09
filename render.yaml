@@ -1,16 +1,16 @@
 # render.yaml — Render Infrastructure as Code
-# Place this at the GIT REPO ROOT (not inside the Django project folder).
-# Render reads this file automatically.
-# Docs: https://render.com/docs/blueprint-spec
+# PostgreSQL database 'fossee-workshop-db' is already created manually on Render.
+# This file deploys ONLY the web service, connecting to that existing DB.
+# Must be placed at the GIT REPO ROOT.
 
 services:
   - type: web
     name: fossee-workshop-backend
     runtime: python
-    region: singapore            # Closest to India — change to oregon/frankfurt if needed
-    plan: free                   # free | starter ($7/mo, no sleep timeout)
+    region: singapore
+    plan: free
 
-    # The Django project lives inside the workshop_booking-master subdirectory
+    # Django project is inside the nested workshop_booking-master subdirectory
     rootDir: workshop_booking-master
 
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input && python manage.py migrate --no-input
@@ -18,13 +18,11 @@ services:
     healthCheckPath: /health/
 
     envVars:
-      # Auto-injected from the database below
+      # Internal Database URL — connects to fossee-workshop-db within Render's network
       - key: DATABASE_URL
-        fromDatabase:
-          name: fossee-workshop-db
-          property: connectionString
+        value: "postgresql://workshop_user:B9XqiQiPczq9FJTVr3KY14ITnqPzyZ44@dpg-d7bgmnmuk2gs738qdkk0-a:5432/workshop_db_31te"
 
-      # Render auto-generates a secure random secret key
+      # Auto-generated secure secret key
       - key: DJANGO_SECRET_KEY
         generateValue: true
 
@@ -41,33 +39,8 @@ services:
         value: "https://fossee-workshop-backend.onrender.com"
 
       - key: ADMIN_EMAIL
-        value: "admin@example.com"          # ← Update this to your real email
+        value: "admin@example.com"
 
-      # Email: set to console for first deploy, update to SMTP after
+      # Email: logs to console for now — update to SMTP after verifying deploy works
       - key: EMAIL_BACKEND
         value: "django.core.mail.backends.console.EmailBackend"
-
-      # Uncomment and fill in after first deploy to enable real emails:
-      # - key: EMAIL_HOST
-      #   value: "smtp.gmail.com"
-      # - key: EMAIL_PORT
-      #   value: "587"
-      # - key: EMAIL_HOST_USER
-      #   value: "youraddress@gmail.com"
-      # - key: EMAIL_HOST_PASSWORD
-      #   value: "your-app-password"
-      # - key: EMAIL_USE_TLS
-      #   value: "True"
-      # - key: SENDER_EMAIL
-      #   value: "youraddress@gmail.com"
-
-      # Set after frontend is deployed:
-      # - key: CORS_ALLOWED_ORIGINS
-      #   value: "https://your-frontend.netlify.app"
-
-databases:
-  - name: fossee-workshop-db
-    databaseName: workshop_db
-    user: workshop_user
-    plan: free                   # Free tier: 90 days active, then $7/mo or export
-    region: singapore            # Must match service region above

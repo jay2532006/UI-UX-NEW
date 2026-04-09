@@ -16,3 +16,4 @@ psycopg2-binary==2.9.9
 # Utilities
 pyaml==20.4.0
 pandas==2.1.1
+numpy==1.26.1

@@ -57,7 +57,8 @@ export default function ProposeWorkshopPage() {
     try {
       await client.post('/workshops/propose/', {
         workshop_type: formData.workshop_type,
-        date: formData.date,
+        proposed_workshop_date: formData.date,
+        terms_accepted: formData.tnc_accepted,
       });
 
       // 🎉 Confetti celebration

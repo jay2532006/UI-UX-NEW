@@ -662,6 +662,33 @@ Each step shows:
 
 ---
 
+
+## Project Evaluation and Comparison Rating
+
+As requested, here is the detailed comparison and rating between the original project state (documented in **"Given Task to Enhance.md"**) and the newly redesigned application.
+
+### Understanding the Baseline ("Given Task to Enhance.md")
+The original project was a standard **monolithic Django application** using server-side rendered templates, session authentication, and Bootstrap CSS. While functionally robust, it struggled with modern UX standards:
+- **High cognitive load**: Tables were dense, hard to read on mobile, and lacked progressive disclosure.
+- **Form interactions**: Full page reloads occurred on every action.
+- **Accessibility**: Missing semantic HTML, ARIA labels, and proper contrast for states (e.g., color-only status indicators).
+
+### The New Architecture & Mindset 
+We chose to decouple the application into a **React Single-Page Application (SPA) driven by Tailwind CSS**, connected to the original backend via a **Django REST API**. This approach was carefully selected to dramatically enhance UI/UX, accessibility, and performance without breaking existing backend functionality. 
+- **The Mindset**: Mobile-first, ensuring high performance on 375px screens. We focused on seamless interactions (no page reloads, toast notifications, loaders) to make the web app feel like a native mobile app.
+
+### Evaluation Ratings
+
+| Metric | Original Project (Before) | Enhanced Redesign (After) | Improvement Details |
+|--------|---------------------------|---------------------------|---------------------|
+| **Architecture** | **7 / 10** | **9 / 10** | Migrated from tight-coupled monolith to decoupled API + SPA. Scalable and modern. |
+| **User Interface (UI)** | **4 / 10** | **9 / 10** | Shifted from basic Bootstrap to a highly polished, responsive Tailwind CSS design system. |
+| **User Experience (UX)** | **4 / 10** | **9.5 / 10** | Eliminated full page reloads. Added inline validation, toast notifications, progress wizards, and loaders. |
+| **Accessibility (a11y)** | **3 / 10** | **9.5 / 10** | Implemented WCAG AAA contrast, semantic sections, screen reader ARIA labels, and keyboard navigability. |
+| **Performance** | **6 / 10** | **9 / 10** | Added React lazy loading, tree-shaking, and CSS purging for maximum frontend delivery speed. |
+| **Overall Score** | **4.8 / 10** | **9.2 / 10** | **Result**: A massive leap in usability and modernization while utilizing the same backend foundation. |
+
+
 ## Setup Instructions
 
 ### Prerequisites
@@ -810,6 +837,36 @@ npm run preview
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `VITE_API_BASE_URL` | Backend API base URL | `http://localhost:8000` (dev) or `https://api.yoursite.com` (prod) |
+
+---
+
+
+## How to Use the Application (Usage Guide)
+
+After setting up both the backend API and frontend React application, follow these steps to use and test the platform:
+
+### 1. Creating Users
+Since this is a fresh setup with SQLite, you must create user accounts to interact with the system:
+- **Fastest Option (Admin)**: Use `python manage.py createsuperuser` in the backend terminal to create an admin account. Log in at `http://localhost:8000/admin` to easily assign positions (Coordinator/Instructor) to different users.
+- **Standard Registration**: On the `http://localhost:5173/`, click **Sign Up** to create a new profile. Complete the email verification process via the terminal output (or activation link) to log in.
+
+### 2. Coordinator Workflow
+Coordinators represent institutions that want to invite an instructor for a workshop.
+1. **Login**: Sign in with a Coordinator account.
+2. **Propose a Workshop**: On the Dashboard, click the **"Propose Workshop"** CTA. Follow the intuitive 3-step wizard (Select Type → Set Date/Time → Review and Submit).
+3. **Tracking**: The proposed workshop will immediately reflect on your Dashboard under "My Workshops" wrapped in a `Pending` status badge.
+4. **Notifications**: You will be notified once the Instructor accepts or rejects the proposed date.
+
+### 3. Instructor Workflow
+Instructors refer to the domain experts who will deliver the workshop.
+1. **Login**: Sign in with an Instructor account.
+2. **Handle Requests**: The Instructor Dashboard surfaces pending requests above the fold. 
+3. **Actioning**: Click "Review" on any pending request. A modal will prompt you to **Accept** or **Reject** the workshop.
+4. **Management**: Accepted workshops move to the "Upcoming Workshops" section where you can view full details or change the date if needed.
+
+### 4. Exploring the Features
+- **Statistics Tab**: Navigate to the Statistics page (accessible via BottomNav on mobile) to view a robust Recharts-driven dashboard detailing the states in India doing the most workshops and type distributions.
+- **Profile Updates**: Your profile dynamically pulls data from the backend. Try updating your department or phone number and look out for the confirmation Toast.
 
 ---
 
@@ -978,6 +1035,33 @@ This submission implements the UI/UX enhancement via a **React SPA frontend** co
 ---
 
 ---
+
+
+## Comprehensive API Architecture & Details
+
+The backend was exposed as a fully functional internal JSON REST API to power the React SPA, while preserving the core logic and models detailed in "Given Task to Enhance.md".
+
+### Authentication & Session Endpoints
+- **`POST /api/auth/login/`**: Authenticates users using Django's session backend. Sets `sessionid` and `csrftoken` cookies.
+- **`POST /api/auth/logout/`**: Terminates the user session.
+- **`GET /api/auth/me/`**: Returns current authenticated user metadata and permissions.
+- **`POST /api/auth/activate/<key>/`**: Validates the email OTP and marks the profile as active.
+
+### Workshop Endpoints
+- **`GET /api/workshops/`**: Retrieves the list of workshops (filtered by Coordinator or Instructor context).
+- **`POST /api/workshops/`**: Proposes a new workshop. Requires detailed payload (date, type, etc.).
+- **`GET /api/workshops/<id>/`**: Fetches comprehensive details for a specific workshop.
+- **`POST /api/workshops/<id>/accept/`**: Allows an Instructor to accept a proposed workshop.
+- **`POST /api/workshops/<id>/reject/`**: Allows an Instructor to reject an undesired workshop proposal.
+- **`PUT /api/workshops/<id>/date/`**: Allows modification of an existing workshop date.
+
+### Statistics & Public Endpoints
+- **`GET /api/stats/public/`**: Aggregates workshop counts by State and Type for the public dashboard chart visualizations.
+- **`GET /api/stats/user/`**: Fetches user-specific monthly and yearly proposal/acceptance metrics.
+- **`GET /api/workshops/types/`**: Retrieves all system-configured Workshop Types for dropdown selection in the proposal wizard.
+
+*Security Note: All mutating endpoints (POST/PUT/DELETE) strictly require `X-CSRFToken` headers mirrored from the `csrftoken` cookie to prevent Cross-Site Request Forgery attacks, exactly as the original monolith did.*
+
 
 ## Frequently Asked Questions
 

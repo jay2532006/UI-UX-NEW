@@ -387,13 +387,15 @@ class PublicStatsView(APIView):
         ]
         state_counts = Counter(r['state'] for r in records)
         type_counts  = Counter(r['type']  for r in records)
+        instructor_count = len(set(w.instructor_id for w in qs if w.instructor_id is not None))
 
         return Response({
             'success': True,
             'total_workshops':    len(records),
             'total_states':       len(state_counts),
-            'workshops_by_state': dict(state_counts),
-            'workshops_by_type':  [{'name': k, 'count': v} for k, v in type_counts.items()],
+            'total_instructors':  instructor_count,
+            'ws_states':  [{'state': k, 'count': v} for k, v in state_counts.items()],
+            'ws_types':  [{'name': k, 'count': v} for k, v in type_counts.items()],
         })
 
 

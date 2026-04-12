@@ -69,18 +69,8 @@ export default function StatisticsPage() {
 
   // CSV download
   const handleDownloadCSV = () => {
-    if (!data?.workshops) return;
-    const headers = 'Type,Date,Status,Coordinator,State\n';
-    const rows = data.workshops.map((w) =>
-      `"${w.workshop_type?.name || ''}","${w.date}","${w.status}","${w.coordinator?.first_name || ''}","${w.coordinator?.profile?.state || ''}"`
-    ).join('\n');
-    const blob = new Blob([headers + rows], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fossee-workshop-stats.csv';
-    a.click();
-    URL.revokeObjectURL(url);
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
+    window.location.href = `${baseUrl}/statistics/csv/`;
   };
 
   return (
@@ -112,7 +102,7 @@ export default function StatisticsPage() {
                 </h1>
                 <p className="text-fossee-muted text-sm mt-1">Public workshop data across India</p>
               </div>
-              <Button variant="secondary" onClick={handleDownloadCSV} disabled={!data?.workshops}>
+              <Button variant="secondary" onClick={handleDownloadCSV} disabled={!data?.total_workshops}>
                 <Download size={16} className="mr-1" /> Export CSV
               </Button>
             </div>

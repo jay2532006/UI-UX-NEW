@@ -25,10 +25,11 @@ export default function WorkshopTypesPage() {
     try {
       const response = await client.get(url);
       const data = response.data;
+      const results = Array.isArray(data) ? data : (data.results || []);
       if (url === '/workshop-types/') {
-        setWorkshopTypes(data.results || []);
+        setWorkshopTypes(results);
       } else {
-        setWorkshopTypes((prev) => [...prev, ...(data.results || [])]);
+        setWorkshopTypes((prev) => [...prev, ...results]);
       }
       setNextPage(data.next || null);
     } catch {

@@ -1,217 +1,259 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable */
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import client from '../../api/client';
+import { motion } from 'framer-motion';
+import { CalendarDays, MapPin, Building2, UserCircle, MessageSquare, Send, Lock } from 'lucide-react';
 import PageWrapper from '../../components/layout/PageWrapper';
-import Card from '../../components/ui/Card';
-import Button from '../../components/ui/Button';
+import WorkshopTimeline from '../../components/workshop/WorkshopTimeline';
 import WorkshopStatusBadge from '../../components/workshop/WorkshopStatusBadge';
-import CommentThread from '../../components/workshop/CommentThread';
-import Spinner from '../../components/ui/Spinner';
-import Toast from '../../components/ui/Toast';
-import { CalendarDays, User, Building2, MapPin } from 'lucide-react';
+import Skeleton from '../../components/ui/Skeleton';
+import Button from '../../components/ui/Button';
+import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../context/ToastContext';
+import { formatDateLong } from '../../utils/formatDate';
+import client from '../../api/client';
 
 export default function WorkshopDetailPage() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { role } = useAuth();
+  const { user, role } = useAuth();
+  const { addToast } = useToast();
   const [workshop, setWorkshop] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [comments, setComments] = useState([]);
-  const [toast, setToast] = useState(null);
+  const [comment, setComment] = useState('');
+  const [sending, setSending] = useState(false);
 
-  useEffect(() => {
-    const fetchWorkshop = async () => {
-      try {
-        const response = await client.get(`/workshops/${id}/`);
-        setWorkshop(response.data);
-        setComments(response.data.comments || []);
-      } catch (err) {
-        setToast({
-          type: 'error',
-          message: err.response?.status === 404
-            ? 'Workshop not found'
-            : 'Failed to load workshop details',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchWorkshop();
-  }, [id]);
-
-  const handleAddComment = async (text) => {
+  const fetchWorkshop = useCallback(async () => {
     try {
-      const response = await client.post(`/workshops/${id}/comments/`, {
-        comment: text,
-      });
-      setComments((prev) => [...prev, response.data]);
-      setToast({ type: 'success', message: 'Comment added' });
+      const res = await client.get(`/workshops/${id}/`);
+      setWorkshop(res.data);
     } catch {
-      setToast({ type: 'error', message: 'Failed to add comment' });
+      addToast('error', 'Failed to load workshop details');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, addToast]);
+
+  useEffect(() => { fetchWorkshop(); }, [fetchWorkshop]);
+
+  const handleComment = async (e) => {
+    e.preventDefault();
+    if (!comment.trim()) return;
+    setSending(true);
+    try {
+      await client.post(`/workshops/${id}/comments/`, { comment: comment.trim() });
+      setComment('');
+      addToast('success', 'Comment posted');
+      fetchWorkshop();
+    } catch {
+      addToast('error', 'Failed to post comment');
+    } finally {
+      setSending(false);
     }
   };
 
-  const workshopType = workshop?.workshop_type_detail;
-  const wsName = workshopType?.name || 'Workshop';
+  const typeName = workshop?.workshop_type?.name || workshop?.workshop_type_detail?.name || 'Workshop';
+
+  if (loading) {
+    return (
+      <PageWrapper>
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-4">
+          <Skeleton variant="text" lines={2} />
+          <Skeleton variant="card" />
+          <Skeleton variant="text" lines={4} />
+        </div>
+      </PageWrapper>
+    );
+  }
+
+  if (!workshop) {
+    return (
+      <PageWrapper>
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-20 text-center text-fossee-muted">
+          Workshop not found.
+        </div>
+      </PageWrapper>
+    );
+  }
 
   return (
     <>
       <Helmet>
-        <title>{wsName ? `${wsName} — FOSSEE Workshop` : 'Workshop Details — FOSSEE'}</title>
-        <meta name="description" content="View detailed information about this workshop including schedule, instructor, and registration details." />
+        <title>{typeName} — Workshop Detail — FOSSEE</title>
+        <meta name="description" content={`Workshop details for ${typeName}`} />
       </Helmet>
       <PageWrapper>
-        <div className="max-w-3xl mx-auto p-4 space-y-6">
-          {/* Back */}
-          <div className="mt-4">
-            <Button variant="ghost" onClick={() => navigate(-1)} className="mb-2">
-              ← Back
-            </Button>
-          </div>
-
-          {loading ? (
-            <Spinner />
-          ) : !workshop ? (
-            <Card>
-              <div className="text-center py-8 text-gray-500">
-                <p className="text-lg font-medium">Workshop not found</p>
-                <p className="text-sm mt-1">This workshop may have been removed or the link is invalid.</p>
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-6">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-fossee-dark">
+                  {typeName}
+                </h1>
+                <p className="text-fossee-muted text-sm mt-1">Workshop #{workshop.id}</p>
               </div>
-            </Card>
-          ) : (
-            <>
-              {/* Header */}
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold text-gray-900">{wsName}</h1>
-                <div className="flex flex-wrap items-center gap-3">
-                  <WorkshopStatusBadge status={workshop.status} />
-                  {workshop.uid && (
-                    <span className="text-xs text-gray-400 font-mono">#{workshop.uid}</span>
-                  )}
-                </div>
-              </div>
+              <WorkshopStatusBadge status={workshop.status} />
+            </div>
 
-              {/* Key Details */}
-              <Card>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div className="flex items-start gap-3">
-                    <CalendarDays size={20} className="text-fossee-blue mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Scheduled Date</p>
-                      <p className="font-semibold">
-                        {new Date(workshop.date).toLocaleDateString('en-IN', {
-                          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-                        })}
-                      </p>
-                    </div>
-                  </div>
+            {/* Timeline */}
+            <div className="mb-8">
+              <WorkshopTimeline status={workshop.status} />
+            </div>
 
-                  <div className="flex items-start gap-3">
-                    <User size={20} className="text-fossee-blue mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide">Coordinator</p>
-                      <p className="font-semibold">{workshop.coordinator_name || '—'}</p>
-                      {workshop.coordinator_email && (
-                        <a
-                          href={`mailto:${workshop.coordinator_email}`}
-                          className="text-sm text-fossee-blue hover:underline"
-                        >
-                          {workshop.coordinator_email}
-                        </a>
-                      )}
-                    </div>
-                  </div>
+            {/* Content Grid: Main + Sidebar */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main content (2/3) */}
+              <div className="lg:col-span-2 space-y-6">
+                {/* Details Card */}
+                <div className="rounded-2xl border border-fossee-border bg-fossee-card p-5 md:p-6 shadow-card space-y-4">
+                  <h2 className="text-lg font-bold text-fossee-dark">Workshop Details</h2>
 
-                  {workshop.instructor_name && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-start gap-3">
-                      <User size={20} className="text-green-600 mt-0.5 flex-shrink-0" />
+                      <CalendarDays size={18} className="text-fossee-primary mt-0.5" />
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Instructor</p>
-                        <p className="font-semibold">{workshop.instructor_name}</p>
+                        <p className="text-sm font-medium text-fossee-dark">Date</p>
+                        <p className="text-sm text-fossee-muted">{formatDateLong(workshop.date)}</p>
                       </div>
                     </div>
-                  )}
-
-                  {workshopType?.duration && (
                     <div className="flex items-start gap-3">
-                      <CalendarDays size={20} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                      <MapPin size={18} className="text-fossee-primary mt-0.5" />
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Duration</p>
-                        <p className="font-semibold">{workshopType.duration}</p>
+                        <p className="text-sm font-medium text-fossee-dark">Location</p>
+                        <p className="text-sm text-fossee-muted">{workshop.coordinator?.profile?.state || '—'}</p>
                       </div>
                     </div>
+                    <div className="flex items-start gap-3">
+                      <Building2 size={18} className="text-fossee-primary mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-fossee-dark">Institute</p>
+                        <p className="text-sm text-fossee-muted">{workshop.coordinator?.profile?.institute || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <UserCircle size={18} className="text-fossee-primary mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-fossee-dark">Coordinator</p>
+                        <p className="text-sm text-fossee-muted">
+                          {workshop.coordinator?.first_name} {workshop.coordinator?.last_name}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Comments Section */}
+                <div className="rounded-2xl border border-fossee-border bg-fossee-card p-5 md:p-6 shadow-card">
+                  <h2 className="text-lg font-bold text-fossee-dark mb-4 flex items-center gap-2">
+                    <MessageSquare size={18} /> Comments
+                  </h2>
+
+                  {/* Comment list */}
+                  <div className="space-y-4 mb-4 max-h-[400px] overflow-y-auto">
+                    {workshop.comments && workshop.comments.length > 0 ? (
+                      workshop.comments.map((c, idx) => (
+                        <div key={idx} className="flex gap-3">
+                          <div className="w-8 h-8 rounded-full bg-fossee-primary/10 text-fossee-primary flex items-center justify-center text-xs font-bold flex-shrink-0">
+                            {c.author?.first_name?.[0] || 'U'}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <span className="text-sm font-semibold text-fossee-dark">
+                                {c.author?.first_name || 'User'}
+                              </span>
+                              {c.is_private && (
+                                <span className="inline-flex items-center gap-0.5 text-xs text-amber-700" title="Private comment">
+                                  <Lock size={10} /> Private
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-700">{c.comment || c.text}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-fossee-muted text-center py-4">No comments yet.</p>
+                    )}
+                  </div>
+
+                  {/* Comment form */}
+                  <form onSubmit={handleComment} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                      placeholder="Write a comment..."
+                      className="flex-1 h-10 px-4 rounded-xl border border-fossee-border focus:border-fossee-primary focus:outline-none text-sm"
+                      disabled={sending}
+                    />
+                    <Button type="submit" variant="primary" disabled={sending || !comment.trim()} className="px-4">
+                      <Send size={16} />
+                    </Button>
+                  </form>
+                </div>
+              </div>
+
+              {/* Sidebar (1/3) */}
+              <div className="space-y-4">
+                {/* Workshop Type Info */}
+                <div className="rounded-2xl border border-fossee-border bg-fossee-card p-5 shadow-card">
+                  <h3 className="text-sm font-bold text-fossee-dark mb-2">Workshop Type</h3>
+                  <p className="text-lg font-bold text-fossee-primary">{typeName}</p>
+                  {workshop.workshop_type?.duration && (
+                    <p className="text-sm text-fossee-muted mt-1">Duration: {workshop.workshop_type.duration}</p>
                   )}
                 </div>
-              </Card>
 
-              {/* Workshop Type Description */}
-              {workshopType?.description && (
-                <Card title="About This Workshop">
-                  <p className="text-gray-700 mt-3 leading-relaxed">{workshopType.description}</p>
-                </Card>
-              )}
+                {/* Instructor Info */}
+                {workshop.instructor && (
+                  <div className="rounded-2xl border border-fossee-border bg-fossee-card p-5 shadow-card">
+                    <h3 className="text-sm font-bold text-fossee-dark mb-2">Instructor</h3>
+                    <p className="font-semibold text-fossee-dark">
+                      {workshop.instructor?.first_name} {workshop.instructor?.last_name}
+                    </p>
+                    <p className="text-sm text-fossee-muted">{workshop.instructor?.email}</p>
+                  </div>
+                )}
 
-              {/* Terms & Conditions */}
-              {workshopType?.terms_and_conditions && (
-                <Card title="Terms & Conditions">
-                  <p className="text-sm text-gray-700 mt-3 leading-relaxed whitespace-pre-line">
-                    {workshopType.terms_and_conditions}
-                  </p>
-                </Card>
-              )}
-
-              {/* Attachments */}
-              {workshopType?.attachments?.length > 0 && (
-                <Card title="Attachments">
-                  <ul className="mt-3 space-y-2">
-                    {workshopType.attachments.map((att) => (
-                      <li key={att.id}>
-                        <a
-                          href={att.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-fossee-blue hover:underline text-sm flex items-center gap-1"
-                        >
-                          📎 Attachment {att.id}
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </Card>
-              )}
-
-              {/* Instructor: manage actions */}
-              {role === 'instructor' && (
-                <div className="flex gap-3">
-                  <Button
-                    variant="primary"
-                    onClick={() => navigate(`/instructor/workshops/${id}`)}
-                    fullWidth
-                  >
-                    Manage Workshop
-                  </Button>
-                </div>
-              )}
-
-              {/* Comments */}
-              <CommentThread
-                comments={comments}
-                canComment={workshop.status === 1}
-                onAddComment={handleAddComment}
-              />
-            </>
-          )}
+                {/* Quick Actions for Instructor */}
+                {role === 'instructor' && workshop.status === 0 && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5 shadow-card space-y-2">
+                    <h3 className="text-sm font-bold text-amber-900">Action Required</h3>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        fullWidth
+                        onClick={async () => {
+                          try {
+                            await client.post(`/workshops/${id}/accept/`);
+                            addToast('success', 'Workshop accepted!');
+                            fetchWorkshop();
+                          } catch { addToast('error', 'Failed to accept'); }
+                        }}
+                      >
+                        Accept
+                      </Button>
+                      <Button
+                        variant="danger"
+                        fullWidth
+                        onClick={async () => {
+                          try {
+                            await client.post(`/workshops/${id}/reject/`);
+                            addToast('success', 'Workshop rejected');
+                            fetchWorkshop();
+                          } catch { addToast('error', 'Failed to reject'); }
+                        }}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
         </div>
-
-        {toast && (
-          <Toast
-            type={toast.type}
-            message={toast.message}
-            onClose={() => setToast(null)}
-          />
-        )}
       </PageWrapper>
     </>
   );

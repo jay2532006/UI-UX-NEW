@@ -13,23 +13,29 @@ const AuthProvider = ({ children }) => {
    */
   useEffect(() => {
     const initAuth = async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        setUser(null);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const response = await client.get('/auth/me/');
-        const userData = response.data;
+        const profile = response.data.user;
         
         setUser({
-          id: userData.id,
-          username: userData.username,
-          email: userData.email,
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          full_name: `${userData.first_name} ${userData.last_name}`.trim(),
-          profile: userData.profile,
-          role: userData.profile?.position || 'coordinator', // 'coordinator' or 'instructor'
+          id: profile.id,
+          email: profile.email,
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
+          profile: profile,
+          role: profile.is_instructor ? 'instructor' : 'coordinator',
         });
         setIsAuthenticated(true);
       } catch {
-        // User not authenticated (401 or network error)
         setUser(null);
         setIsAuthenticated(false);
       } finally {
@@ -45,27 +51,29 @@ const AuthProvider = ({ children }) => {
    */
   const login = async (username, password) => {
     try {
-      const response = await client.post('/auth/login/', { username, password });
-      const userData = response.data;
+      const response = await client.post('/auth/login/', { email: username, password });
+      
+      localStorage.setItem('access_token', response.data.access);
+      localStorage.setItem('refresh_token', response.data.refresh);
 
-      const userRole = userData.profile?.position || 'coordinator';
+      const profile = response.data.user;
+      const userRole = profile.is_instructor ? 'instructor' : 'coordinator';
+      
       setUser({
-        id: userData.id,
-        username: userData.username,
-        email: userData.email,
-        first_name: userData.first_name,
-        last_name: userData.last_name,
-        full_name: `${userData.first_name} ${userData.last_name}`.trim(),
-        profile: userData.profile,
+        id: profile.id,
+        email: profile.email,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
+        profile: profile,
         role: userRole,
       });
       setIsAuthenticated(true);
-      // Return role so callers can navigate immediately without a second render
       return { success: true, role: userRole };
     } catch (err) {
       return {
         success: false,
-        error: err.response?.data?.error || 'Login failed',
+        error: err.response?.data?.errors?.non_field_errors?.[0] || 'Login failed',
       };
     }
   };
@@ -74,14 +82,13 @@ const AuthProvider = ({ children }) => {
    * Logout function
    */
   const logout = async () => {
-    try {
-      await client.post('/auth/logout/');
-      setUser(null);
-      setIsAuthenticated(false);
-      return { success: true };
-    } catch {
-      return { success: false, error: 'Logout failed' };
-    }
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    setUser(null);
+    setIsAuthenticated(false);
+    // Hard refresh to clear any cached axio contexts
+    window.location.href = '/login';
+    return { success: true };
   };
 
   /**
@@ -90,11 +97,43 @@ const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await client.post('/auth/register/', userData);
-      return { success: true, message: response.data?.detail };
+      return { success: true, message: response.data?.message };
     } catch (err) {
       return {
         success: false,
-        error: err.response?.data?.detail || 'Registration failed',
+        error: 'Registration failed. Check your inputs.',
+      };
+    }
+  };
+
+  /**
+   * Google signin function
+   */
+  const loginWithGoogle = async (credential) => {
+    try {
+      const response = await client.post('/auth/google/', { id_token: credential });
+      
+      localStorage.setItem('access_token', response.data.access);
+      localStorage.setItem('refresh_token', response.data.refresh);
+
+      const profile = response.data.user;
+      const userRole = profile.is_instructor ? 'instructor' : 'coordinator';
+      
+      setUser({
+        id: profile.id,
+        email: profile.email,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        full_name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
+        profile: profile,
+        role: userRole,
+      });
+      setIsAuthenticated(true);
+      return { success: true, role: userRole };
+    } catch (err) {
+      return {
+        success: false,
+        error: err.response?.data?.errors || 'Google login failed',
       };
     }
   };
@@ -109,6 +148,7 @@ const AuthProvider = ({ children }) => {
         isAuthenticated,
         role,
         login,
+        loginWithGoogle,
         logout,
         register,
       }}

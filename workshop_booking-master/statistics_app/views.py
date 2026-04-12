@@ -111,10 +111,44 @@ def team_stats(request, team_id=None):
         workshop_count = Workshop.objects.filter(
             instructor_id=member.user.id).count()
         member_workshop_data[member.user.get_full_name()] = workshop_count
-    team_labels = list(member_workshop_data.keys())
-    ws_count = list(member_workshop_data.values())
+    TEAM_LABELS = list(member_workshop_data.keys())
+    WS_COUNT = list(member_workshop_data.values())
     return render(
         request, 'statistics_app/team_stats.html',
-        {'team_labels': team_labels, "ws_count": ws_count, 'all_teams': teams,
+        {'team_labels': TEAM_LABELS, "ws_count": WS_COUNT, 'all_teams': teams,
          'team_id': team.id}
     )
+
+
+def get_public_stats_data(request):
+    """Returns a dict — called by workshop_app.api.views.PublicStatsView."""
+    import pandas as pd
+    from workshop_app.models import Workshop
+
+    qs = Workshop.objects.filter(status=1).select_related(
+        'coordinator__profile', 'workshop_type')
+
+    if not qs.exists():
+        return {'total_workshops': 0, 'total_states': 0,
+                'workshops_by_state': {}, 'workshops_by_type': []}
+
+    records = [
+        {
+            'state': getattr(getattr(w.coordinator, 'profile', None), 'state', 'Unknown'),
+            'type':  w.workshop_type.name if w.workshop_type else 'Unknown',
+        }
+        for w in qs
+    ]
+    df        = pd.DataFrame(records)
+    by_state  = df.groupby('state').size().to_dict()
+    by_type   = df.groupby('type').size().reset_index(name='count')
+
+    return {
+        'total_workshops':    len(records),
+        'total_states':       len(by_state),
+        'workshops_by_state': by_state,
+        'workshops_by_type':  [
+            {'name': r['type'], 'count': int(r['count'])}
+            for _, r in by_type.iterrows()
+        ],
+    }

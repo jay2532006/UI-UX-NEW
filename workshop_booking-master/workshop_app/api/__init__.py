@@ -1,1 +1,1 @@
-# workshop_app/api package
+# Empty init

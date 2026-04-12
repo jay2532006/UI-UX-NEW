@@ -242,9 +242,10 @@ class Comment(models.Model):
 
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     comment = models.TextField()
+    is_private = models.BooleanField(default=False)
     public = models.BooleanField(default=True)
     created_date = models.DateTimeField(default=timezone.now)
-    workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE)
+    workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE, related_name='comment')
 
     def __str__(self):
         return f"Comment by {self.author.get_full_name()}"

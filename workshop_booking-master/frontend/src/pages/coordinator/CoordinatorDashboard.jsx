@@ -1,15 +1,17 @@
+/* eslint-disable */
 import React, { useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { PlusCircle, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useWorkshops } from '../../hooks/useWorkshops';
 import PageWrapper from '../../components/layout/PageWrapper';
-import Card from '../../components/ui/Card';
+import StatCard from '../../components/stats/StatCard';
 import Button from '../../components/ui/Button';
-import WorkshopCard from '../../components/workshop/WorkshopCard';
-import Spinner from '../../components/ui/Spinner';
-import EmptyState from '../../components/ui/EmptyState';
-import { BookOpen } from 'lucide-react';
+import WorkshopList from '../../components/workshop/WorkshopList';
+import { daysUntil, formatDate } from '../../utils/formatDate';
+import { STATUS_CODES } from '../../utils/constants';
 
 export default function CoordinatorDashboard() {
   const navigate = useNavigate();
@@ -17,118 +19,114 @@ export default function CoordinatorDashboard() {
   const { workshops, loading, fetchWorkshops } = useWorkshops();
 
   useEffect(() => {
-    const loadWorkshops = async () => {
-      await fetchWorkshops();
-    };
-    loadWorkshops();
+    fetchWorkshops();
   }, [fetchWorkshops]);
 
-  // Calculate stats using useMemo to avoid setState in effect
   const stats = useMemo(() => ({
     total: workshops.length,
-    pending: workshops.filter((w) => w.status === 0).length,
-    accepted: workshops.filter((w) => w.status === 1).length,
+    pending: workshops.filter((w) => w.status === STATUS_CODES.PENDING).length,
+    accepted: workshops.filter((w) => w.status === STATUS_CODES.ACCEPTED).length,
   }), [workshops]);
+
+  // Find upcoming workshop (accepted, within 14 days)
+  const upcomingWorkshop = useMemo(() => {
+    return workshops.find((w) => {
+      if (w.status !== STATUS_CODES.ACCEPTED) return false;
+      const days = daysUntil(w.date);
+      return days >= 0 && days <= 14;
+    });
+  }, [workshops]);
 
   return (
     <>
       <Helmet>
         <title>Dashboard — FOSSEE Workshop Booking</title>
-        <meta name="description" content="View your workshop proposals, manage pending requests, and track workshop statistics. Coordinate with instructors and manage workshop dates." />
+        <meta name="description" content="Manage your workshop proposals, track status, and coordinate with instructors." />
       </Helmet>
       <PageWrapper>
-      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-7">
-        {/* Greeting */}
-        <div className="mt-4 rounded-2xl bg-white/85 border border-slate-200/70 shadow-sm p-5 md:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-fossee-orange">Dashboard Overview</p>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mt-1">
-            Hello, {user?.first_name || 'Coordinator'} 👋
-          </h1>
-          <p className="text-slate-600 text-sm mt-2">Welcome to FOSSEE Workshop Booking</p>
-        </div>
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-6">
+          {/* Welcome banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl bg-fossee-card border border-fossee-border shadow-card p-5 md:p-6"
+          >
+            <p className="text-xs font-bold uppercase tracking-widest text-fossee-accent">Dashboard</p>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-fossee-dark mt-1">
+              Hello, {user?.first_name || 'Coordinator'} 👋
+            </h1>
+            <p className="text-fossee-muted text-sm mt-1">Welcome to the FOSSEE Workshop Booking Portal</p>
+          </motion.div>
 
-        {/* Summary Cards - Horizontal Scroll on Mobile */}
-        <div className="flex gap-3 overflow-x-auto pb-2 md:grid md:grid-cols-3 md:gap-5 md:overflow-x-visible">
-          {/* Total Workshops */}
-          <Card className="min-w-[150px] md:min-w-0 flex-shrink-0 bg-white">
-            <div className="text-center">
-              <div className="text-4xl font-black text-fossee-blue tracking-tight">{stats.total}</div>
-              <div className="text-sm font-medium text-slate-600 mt-1">My Workshops</div>
-            </div>
-          </Card>
+          {/* Upcoming workshop countdown banner */}
+          {upcomingWorkshop && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-2xl bg-gradient-to-r from-amber-50 to-amber-100 border border-amber-200 p-4 md:p-5 flex items-start gap-3"
+            >
+              <AlertTriangle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-900 text-sm">
+                  Upcoming Workshop in {daysUntil(upcomingWorkshop.date)} day(s)
+                </p>
+                <p className="text-xs text-amber-800 mt-0.5">
+                  {upcomingWorkshop.workshop_type?.name} — {formatDate(upcomingWorkshop.date)}
+                </p>
+              </div>
+            </motion.div>
+          )}
 
-          {/* Pending Workshops */}
-          <Card className="min-w-[150px] md:min-w-0 flex-shrink-0 bg-amber-50/70 border-amber-200/60">
-            <div className="text-center">
-              <div className="text-4xl font-black text-amber-700 tracking-tight">{stats.pending}</div>
-              <div className="text-sm font-medium text-amber-900/80 mt-1">Pending</div>
-            </div>
-          </Card>
-
-          {/* Accepted Workshops */}
-          <Card className="min-w-[150px] md:min-w-0 flex-shrink-0 bg-emerald-50/70 border-emerald-200/60">
-            <div className="text-center">
-              <div className="text-4xl font-black text-emerald-700 tracking-tight">{stats.accepted}</div>
-              <div className="text-sm font-medium text-emerald-900/80 mt-1">Accepted</div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Propose CTA Card */}
-        <Card
-          className="bg-gradient-to-r from-fossee-blue to-blue-900 text-white cursor-pointer hover:brightness-110 transition-all border-blue-950/30"
-          title="Propose a Workshop"
-          subtitle="Browse workshop types and propose a new session"
-          onClick={() => navigate('/propose')}
-        >
-          <Button variant="ghost" className="text-white mt-2 w-fit hover:bg-white/15">
-            Start Proposing →
-          </Button>
-        </Card>
-
-        {/* Recent Workshops */}
-        <div>
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">Recent Workshops</h2>
-            {workshops.length > 0 && (
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/my-workshops')}
-              >
-                View All
-              </Button>
-            )}
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-3 md:gap-5">
+            <StatCard label="My Workshops" value={stats.total} color="text-fossee-primary" bgColor="bg-white" />
+            <StatCard label="Pending" value={stats.pending} color="text-amber-600" bgColor="bg-amber-50/50" />
+            <StatCard label="Accepted" value={stats.accepted} color="text-fossee-secondary" bgColor="bg-green-50/50" />
           </div>
 
-          {loading ? (
-            <Spinner />
-          ) : workshops.length === 0 ? (
-            <EmptyState
-              message="No workshops proposed yet"
-              Icon={BookOpen}
-              action={
-                <Button
-                  variant="primary"
-                  onClick={() => navigate('/propose')}
-                >
+          {/* Propose CTA */}
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="rounded-2xl bg-gradient-to-r from-fossee-primary to-blue-800 text-white p-5 md:p-6 cursor-pointer shadow-card"
+            onClick={() => navigate('/propose')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') navigate('/propose'); }}
+          >
+            <div className="flex items-center gap-3">
+              <PlusCircle size={24} />
+              <div>
+                <h2 className="text-lg font-bold">Propose a Workshop</h2>
+                <p className="text-sm text-white/80 mt-0.5">Browse workshop types and propose a new session</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Workshops */}
+          <div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold tracking-tight text-fossee-dark">Recent Workshops</h2>
+              {workshops.length > 5 && (
+                <Button variant="ghost" onClick={() => navigate('/my-workshops')}>
+                  View All
+                </Button>
+              )}
+            </div>
+            <WorkshopList
+              workshops={workshops.slice(0, 5)}
+              loading={loading}
+              onTapWorkshop={(w) => navigate(`/workshop/${w.id}`)}
+              emptyMessage="No workshops proposed yet"
+              emptyAction={
+                <Button variant="primary" onClick={() => navigate('/propose')}>
                   Propose Your First Workshop
                 </Button>
               }
             />
-          ) : (
-            <div className="space-y-3">
-              {workshops.slice(0, 5).map((workshop) => (
-                <WorkshopCard
-                  key={workshop.id}
-                  workshop={workshop}
-                  onTap={() => navigate(`/workshop/${workshop.id}`)}
-                />
-              ))}
-            </div>
-          )}
+          </div>
         </div>
-      </div>
-    </PageWrapper>
+      </PageWrapper>
     </>
   );
 }

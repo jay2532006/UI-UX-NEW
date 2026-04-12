@@ -1,7 +1,10 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { HelmetProvider } from 'react-helmet-async';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import Spinner from './components/ui/Spinner';
@@ -27,6 +30,7 @@ const ProfilePage = React.lazy(() => import('./pages/shared/ProfilePage'));
 const StatisticsPage = React.lazy(() => import('./pages/shared/StatisticsPage'));
 
 // Other Pages
+const LandingPage = React.lazy(() => import('./pages/LandingPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 // Loading fallback
@@ -48,67 +52,59 @@ function RootRedirect() {
   return <Navigate to="/dashboard" replace />;
 }
 
+function AnimatedRoutes() {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        {/* Public Landing */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Auth-based redirect (for '/home') */}
+        <Route path="/home" element={<RootRedirect />} />
+
+        {/* Public Routes */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/statistics" element={<StatisticsPage />} />
+
+        {/* Coordinator Routes */}
+        <Route path="/dashboard" element={<ProtectedRoute Component={CoordinatorDashboard} requiredRoles={['coordinator']} />} />
+        <Route path="/propose" element={<ProtectedRoute Component={ProposeWorkshopPage} requiredRoles={['coordinator']} />} />
+        <Route path="/my-workshops" element={<ProtectedRoute Component={WorkshopStatusPage} requiredRoles={['coordinator']} />} />
+
+        {/* Instructor Routes */}
+        <Route path="/instructor/dashboard" element={<ProtectedRoute Component={InstructorDashboard} requiredRoles={['instructor']} />} />
+        <Route path="/instructor/workshops/:id" element={<ProtectedRoute Component={WorkshopManagePage} requiredRoles={['instructor']} />} />
+
+        {/* Shared Auth Routes */}
+        <Route path="/workshop-types" element={<ProtectedRoute Component={WorkshopTypesPage} />} />
+        <Route path="/workshop/:id" element={<ProtectedRoute Component={WorkshopDetailPage} />} />
+        <Route path="/profile" element={<ProtectedRoute Component={ProfilePage} />} />
+
+        {/* Catch-all */}
+        <Route path="/404" element={<NotFoundPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </AnimatePresence>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <HelmetProvider>
-        <Router>
-          <AuthProvider>
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
-                {/* Root redirect */}
-                <Route path="/" element={<RootRedirect />} />
-
-                {/* Public Routes */}
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/statistics" element={<StatisticsPage />} />
-
-                {/* Coordinator Routes */}
-                <Route
-                  path="/dashboard"
-                  element={<ProtectedRoute Component={CoordinatorDashboard} requiredRoles={['coordinator']} />}
-                />
-                <Route
-                  path="/propose"
-                  element={<ProtectedRoute Component={ProposeWorkshopPage} requiredRoles={['coordinator']} />}
-                />
-                <Route
-                  path="/my-workshops"
-                  element={<ProtectedRoute Component={WorkshopStatusPage} requiredRoles={['coordinator']} />}
-                />
-
-                {/* Instructor Routes */}
-                <Route
-                  path="/instructor/dashboard"
-                  element={<ProtectedRoute Component={InstructorDashboard} requiredRoles={['instructor']} />}
-                />
-                <Route
-                  path="/instructor/workshops/:id"
-                  element={<ProtectedRoute Component={WorkshopManagePage} requiredRoles={['instructor']} />}
-                />
-
-                {/* Shared Auth Routes */}
-                <Route
-                  path="/workshop-types"
-                  element={<ProtectedRoute Component={WorkshopTypesPage} />}
-                />
-                <Route
-                  path="/workshop/:id"
-                  element={<ProtectedRoute Component={WorkshopDetailPage} />}
-                />
-                <Route
-                  path="/profile"
-                  element={<ProtectedRoute Component={ProfilePage} />}
-                />
-
-                {/* Catch-all */}
-                <Route path="/404" element={<NotFoundPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-              </Routes>
-            </Suspense>
-          </AuthProvider>
-        </Router>
+        <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID || 'dummy-client-id'}>
+          <Router>
+            <AuthProvider>
+              <ToastProvider>
+                <Suspense fallback={<LoadingFallback />}>
+                  <AnimatedRoutes />
+                </Suspense>
+              </ToastProvider>
+            </AuthProvider>
+          </Router>
+        </GoogleOAuthProvider>
       </HelmetProvider>
     </ErrorBoundary>
   );

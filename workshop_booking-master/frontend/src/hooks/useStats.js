@@ -19,7 +19,7 @@ export const useStats = () => {
       if (filters.state) params.append('state', filters.state);
       if (filters.workshop_type) params.append('workshop_type', filters.workshop_type);
 
-      const url = '/stats/public/?' + params.toString();
+      const url = '/statistics/public/?' + params.toString();
       const response = await client.get(url);
       setStats(response.data);
       return response.data;

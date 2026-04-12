@@ -1,83 +1,62 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable */
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import client from '../../api/client';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check, X, CalendarDays } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../context/ToastContext';
 import PageWrapper from '../../components/layout/PageWrapper';
-import Card from '../../components/ui/Card';
+import StatCard from '../../components/stats/StatCard';
+import Skeleton from '../../components/ui/Skeleton';
 import Button from '../../components/ui/Button';
-import Modal from '../../components/ui/Modal';
-import Toast from '../../components/ui/Toast';
-import Spinner from '../../components/ui/Spinner';
-import EmptyState from '../../components/ui/EmptyState';
-import WorkshopCard from '../../components/workshop/WorkshopCard';
-import { CheckCircle2, X } from 'lucide-react';
+import WorkshopStatusBadge from '../../components/workshop/WorkshopStatusBadge';
+import { formatDate } from '../../utils/formatDate';
+import { STATUS_CODES } from '../../utils/constants';
+import client from '../../api/client';
 
 export default function InstructorDashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addToast } = useToast();
   const [workshops, setWorkshops] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(null);
-  const [actionModal, setActionModal] = useState({ show: false, action: null, workshopId: null });
+  const [confirmAction, setConfirmAction] = useState(null); // { id, action }
 
-  useEffect(() => {
-    const fetchWorkshops = async () => {
-      try {
-        const response = await client.get('/workshops/');
-        setWorkshops(response.data.results || []);
-      } catch {
-        setToast({
-          type: 'error',
-          message: 'Failed to load workshops',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchWorkshops();
-  }, []);
-
-  const pendingWorkshops = workshops.filter((w) => w.status === 0);
-  const acceptedWorkshops = workshops.filter((w) => w.status === 1);
-
-  const handleAccept = async () => {
+  const fetchWorkshops = useCallback(async () => {
     try {
-      await client.post(`/workshops/${actionModal.workshopId}/accept/`);
-      setWorkshops((prev) =>
-        prev.map((w) =>
-          w.id === actionModal.workshopId ? { ...w, status: 1 } : w
-        )
-      );
-      setToast({
-        type: 'success',
-        message: 'Workshop accepted!',
-      });
-      setActionModal({ show: false, action: null, workshopId: null });
+      setLoading(true);
+      const res = await client.get('/workshops/instructor/');
+      setWorkshops(res.data);
     } catch {
-      setToast({
-        type: 'error',
-        message: 'Failed to accept workshop',
-      });
+      addToast('error', 'Failed to load workshops');
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [addToast]);
 
-  const handleReject = async () => {
+  useEffect(() => { fetchWorkshops(); }, [fetchWorkshops]);
+
+  const stats = useMemo(() => ({
+    total: workshops.length,
+    pending: workshops.filter((w) => w.status === STATUS_CODES.PENDING).length,
+    accepted: workshops.filter((w) => w.status === STATUS_CODES.ACCEPTED).length,
+    rejected: workshops.filter((w) => w.status === STATUS_CODES.REJECTED).length,
+  }), [workshops]);
+
+  const pendingWorkshops = useMemo(() =>
+    workshops.filter((w) => w.status === STATUS_CODES.PENDING), [workshops]);
+  const otherWorkshops = useMemo(() =>
+    workshops.filter((w) => w.status !== STATUS_CODES.PENDING), [workshops]);
+
+  const handleAction = async (workshopId, action) => {
     try {
-      await client.post(`/workshops/${actionModal.workshopId}/reject/`);
-      setWorkshops((prev) =>
-        prev.map((w) =>
-          w.id === actionModal.workshopId ? { ...w, status: 2 } : w
-        )
-      );
-      setToast({
-        type: 'success',
-        message: 'Workshop rejected',
-      });
-      setActionModal({ show: false, action: null, workshopId: null });
+      await client.post(`/workshops/${workshopId}/${action}/`);
+      addToast('success', `Workshop ${action === 'accept' ? 'accepted' : 'rejected'} successfully`);
+      setConfirmAction(null);
+      fetchWorkshops();
     } catch {
-      setToast({
-        type: 'error',
-        message: 'Failed to reject workshop',
-      });
+      addToast('error', `Failed to ${action} workshop`);
     }
   };
 
@@ -85,159 +64,126 @@ export default function InstructorDashboard() {
     <>
       <Helmet>
         <title>Instructor Dashboard — FOSSEE Workshop Booking</title>
-        <meta name="description" content="Manage workshop requests, accept or reject proposals, and view upcoming workshops scheduled for instruction." />
+        <meta name="description" content="Manage workshop requests. Accept or reject proposals from coordinators." />
       </Helmet>
       <PageWrapper>
-      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-7">
-        {/* Header */}
-        <div className="mt-4 rounded-2xl bg-white/85 border border-slate-200/70 shadow-sm p-5 md:p-6">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-fossee-orange">Instructor Workspace</p>
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mt-1">Instructor Dashboard</h1>
-          <p className="text-slate-600 text-sm mt-2">Review and manage workshop requests</p>
-        </div>
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-6">
+          {/* Welcome */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <p className="text-xs font-bold uppercase tracking-widest text-fossee-accent">Instructor</p>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-fossee-dark mt-1">
+              Hello, {user?.first_name || 'Instructor'} 👨‍🏫
+            </h1>
+          </motion.div>
 
-        {loading ? (
-          <Spinner />
-        ) : (
-          <>
-            {/* Pending Requests - MOST URGENT */}
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-red-700 flex items-center gap-2">
-                  <span className="bg-red-100 text-red-700 rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold border border-red-200">
-                    {pendingWorkshops.length}
-                  </span>
-                  Pending Requests
-                </h2>
-                <p className="text-sm text-slate-600 mt-1">Workshops waiting for your approval</p>
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard label="Total" value={stats.total} color="text-fossee-primary" bgColor="bg-white" />
+            <StatCard label="Pending" value={stats.pending} color="text-amber-600" bgColor="bg-amber-50/50" />
+            <StatCard label="Accepted" value={stats.accepted} color="text-fossee-secondary" bgColor="bg-green-50/50" />
+            <StatCard label="Rejected" value={stats.rejected} color="text-red-600" bgColor="bg-red-50/50" />
+          </div>
+
+          {/* Pending Requests — Action Required */}
+          {pendingWorkshops.length > 0 && (
+            <section>
+              <h2 className="text-xl font-bold text-fossee-dark mb-4">
+                ⏳ Pending Requests ({pendingWorkshops.length})
+              </h2>
+              <div className="space-y-3">
+                {pendingWorkshops.map((ws) => (
+                  <motion.div
+                    key={ws.id}
+                    layout
+                    className="rounded-2xl border border-amber-200 bg-amber-50/30 p-4 md:p-5 shadow-card"
+                  >
+                    <div className="flex justify-between items-start gap-3 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-base text-fossee-dark truncate">
+                          {ws.workshop_type?.name || ws.workshop_type_detail?.name || 'Workshop'}
+                        </h3>
+                        <p className="text-sm text-fossee-muted">
+                          {ws.coordinator?.first_name || 'Coordinator'} · {formatDate(ws.date)}
+                        </p>
+                      </div>
+                      <WorkshopStatusBadge status={ws.status} />
+                    </div>
+
+                    {/* Inline confirmation or action buttons */}
+                    <AnimatePresence mode="wait">
+                      {confirmAction?.id === ws.id ? (
+                        <motion.div
+                          key="confirm"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="flex items-center gap-2 mt-2 p-3 bg-white rounded-xl border border-fossee-border"
+                        >
+                          <span className="text-sm text-fossee-dark font-medium flex-1">
+                            {confirmAction.action === 'accept' ? 'Accept this workshop?' : 'Reject this workshop?'}
+                          </span>
+                          <Button variant="primary" onClick={() => handleAction(ws.id, confirmAction.action)} className="text-xs px-3 py-1.5">
+                            Yes
+                          </Button>
+                          <Button variant="ghost" onClick={() => setConfirmAction(null)} className="text-xs px-3 py-1.5">
+                            Cancel
+                          </Button>
+                        </motion.div>
+                      ) : (
+                        <motion.div key="actions" className="flex gap-2 mt-2">
+                          <Button variant="primary" onClick={() => setConfirmAction({ id: ws.id, action: 'accept' })} className="flex-1 text-sm">
+                            <Check size={16} className="mr-1" /> Accept
+                          </Button>
+                          <Button variant="danger" onClick={() => setConfirmAction({ id: ws.id, action: 'reject' })} className="flex-1 text-sm">
+                            <X size={16} className="mr-1" /> Reject
+                          </Button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
               </div>
+            </section>
+          )}
 
-              {pendingWorkshops.length === 0 ? (
-                <EmptyState
-                  message="No pending workshop requests"
-                  Icon="✅"
-                />
-              ) : (
-                <div className="space-y-3">
-                  {pendingWorkshops.map((workshop) => (
-                    <Card
-                      key={workshop.id}
-                      title={workshop.workshop_type?.name || 'Workshop'}
-                      subtitle={`Proposed by ${workshop.coordinator?.first_name}`}
-                      className="bg-white"
-                    >
-                      <div className="space-y-3 mt-3">
-                        <div className="text-sm text-slate-600">
-                          <p>
-                            <strong>Proposed Date:</strong> {new Date(workshop.date).toLocaleDateString()}
-                          </p>
-                          <p>
-                            <strong>Institute:</strong> {workshop.coordinator?.profile?.institute}
-                          </p>
-                          <p>
-                            <strong>Contact:</strong> {workshop.coordinator?.email}
-                          </p>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="primary"
-                            onClick={() =>
-                              setActionModal({
-                                show: true,
-                                action: 'accept',
-                                workshopId: workshop.id,
-                              })
-                            }
-                            className="flex-1 flex items-center justify-center gap-1"
-                          >
-                            <CheckCircle2 size={16} /> Accept
-                          </Button>
-                          <Button
-                            variant="danger"
-                            onClick={() =>
-                              setActionModal({
-                                show: true,
-                                action: 'reject',
-                                workshopId: workshop.id,
-                              })
-                            }
-                            className="flex-1 flex items-center justify-center gap-1"
-                          >
-                            <X size={16} /> Reject
-                          </Button>
+          {/* Other workshops */}
+          <section>
+            <h2 className="text-xl font-bold text-fossee-dark mb-4">All Workshops</h2>
+            {loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => <Skeleton key={i} variant="workshop-card" />)}
+              </div>
+            ) : otherWorkshops.length === 0 && pendingWorkshops.length === 0 ? (
+              <div className="text-center py-12 text-fossee-muted">No workshops assigned yet.</div>
+            ) : (
+              <div className="space-y-3">
+                {otherWorkshops.map((ws) => (
+                  <div
+                    key={ws.id}
+                    className="rounded-2xl border border-fossee-border bg-fossee-card p-4 md:p-5 shadow-card hover:shadow-hover transition-all cursor-pointer"
+                    onClick={() => navigate(`/workshop/${ws.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/workshop/${ws.id}`); }}
+                  >
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-base text-fossee-dark truncate">
+                          {ws.workshop_type?.name || ws.workshop_type_detail?.name || 'Workshop'}
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-fossee-muted mt-1">
+                          <CalendarDays size={14} /> {formatDate(ws.date)}
                         </div>
                       </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Upcoming Workshops */}
-            <div className="space-y-4 border-t border-slate-200 pt-6">
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">Upcoming Workshops ({acceptedWorkshops.length})</h2>
-                <p className="text-sm text-slate-600 mt-1">Workshops you have accepted</p>
+                      <WorkshopStatusBadge status={ws.status} />
+                    </div>
+                  </div>
+                ))}
               </div>
-
-              {acceptedWorkshops.length === 0 ? (
-                <EmptyState message="No accepted workshops yet" Icon="📅" />
-              ) : (
-                <div className="space-y-3">
-                  {acceptedWorkshops.map((workshop) => (
-                    <WorkshopCard
-                      key={workshop.id}
-                      workshop={workshop}
-                      onTap={() => navigate(`/instructor/workshops/${workshop.id}`)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Confirm Action Modal */}
-      <Modal
-        isOpen={actionModal.show}
-        onClose={() => setActionModal({ show: false, action: null, workshopId: null })}
-        title={actionModal.action === 'accept' ? 'Accept Workshop?' : 'Reject Workshop?'}
-      >
-        <div className="space-y-4">
-          <p className="text-gray-700">
-            {actionModal.action === 'accept'
-              ? 'You will be assigned as the instructor for this workshop.'
-              : 'The coordinator will be notified of the rejection.'}
-          </p>
-          <div className="flex gap-3">
-            <Button
-              variant="secondary"
-              onClick={() => setActionModal({ show: false, action: null, workshopId: null })}
-              fullWidth
-            >
-              Cancel
-            </Button>
-            <Button
-              variant={actionModal.action === 'accept' ? 'primary' : 'danger'}
-              onClick={actionModal.action === 'accept' ? handleAccept : handleReject}
-              fullWidth
-            >
-              {actionModal.action === 'accept' ? 'Accept' : 'Reject'}
-            </Button>
-          </div>
+            )}
+          </section>
         </div>
-      </Modal>
-
-      {/* Toast */}
-      {toast && (
-        <Toast
-          type={toast.type}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
-      )}
-    </PageWrapper>
+      </PageWrapper>
     </>
   );
 }

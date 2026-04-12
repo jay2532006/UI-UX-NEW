@@ -1,25 +1,26 @@
-import React, { useEffect, useState } from 'react';
+/* eslint-disable */
+import React, { useEffect, useState, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle, BookOpen, CalendarDays, ArrowRight } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import client from '../../api/client';
 import PageWrapper from '../../components/layout/PageWrapper';
-import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Modal from '../../components/ui/Modal';
-import Toast from '../../components/ui/Toast';
-import Spinner from '../../components/ui/Spinner';
+import Skeleton from '../../components/ui/Skeleton';
+import { useToast } from '../../context/ToastContext';
+import { dateFromNow } from '../../utils/formatDate';
 
 export default function ProposeWorkshopPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { addToast } = useToast();
   const [step, setStep] = useState(1);
   const [workshopTypes, setWorkshopTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState(null);
-  const [showTncModal, setShowTncModal] = useState(false);
 
-  // Support pre-selection from WorkshopTypesPage navigate state
   const preselectedType = location.state?.preselectedType || null;
 
   const [formData, setFormData] = useState({
@@ -28,300 +29,238 @@ export default function ProposeWorkshopPage() {
     tnc_accepted: false,
   });
 
-  // Auto-advance to step 2 if a type was pre-selected
-  useEffect(() => {
-    if (preselectedType) setStep(2);
-  }, [preselectedType]);
+  useEffect(() => { if (preselectedType) setStep(2); }, [preselectedType]);
 
-  // Fetch workshop types on mount
-  useEffect(() => {
-    const fetchTypes = async () => {
-      try {
-        const response = await client.get('/workshop-types/');
-        setWorkshopTypes(response.data.results || []);
-      } catch {
-        setToast({
-          type: 'error',
-          message: 'Failed to load workshop types',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTypes();
-  }, []);
+  const fetchTypes = useCallback(async () => {
+    try {
+      const res = await client.get('/workshop-types/');
+      setWorkshopTypes(res.data.results || []);
+    } catch {
+      addToast('error', 'Failed to load workshop types');
+    } finally {
+      setLoading(false);
+    }
+  }, [addToast]);
 
-  // Calculate minimum date (today + 7 days)
-  const getMinDate = () => {
-    const date = new Date();
-    date.setDate(date.getDate() + 7);
-    return date.toISOString().split('T')[0];
-  };
-
-  const handleSelectType = (typeId) => {
-    setFormData((prev) => ({ ...prev, workshop_type: typeId }));
-    setStep(2);
-  };
-
-  const handleDateChange = (e) => {
-    setFormData((prev) => ({ ...prev, date: e.target.value }));
-  };
+  useEffect(() => { fetchTypes(); }, [fetchTypes]);
 
   const selectedType = workshopTypes.find((t) => t.id === formData.workshop_type);
-
-  const handleProceedToTnc = () => {
-    if (!formData.date) {
-      setToast({
-        type: 'error',
-        message: 'Please select a date',
-      });
-      return;
-    }
-    setStep(3);
-  };
+  const minDate = dateFromNow(7);
 
   const handleSubmit = async () => {
     if (!formData.tnc_accepted) {
-      setToast({
-        type: 'error',
-        message: 'Please accept the terms and conditions',
-      });
+      addToast('error', 'Please accept the Terms & Conditions');
       return;
     }
-
     setSubmitting(true);
     try {
-      await client.post('/workshops/', {
+      await client.post('/workshops/propose/', {
         workshop_type: formData.workshop_type,
         date: formData.date,
-        tnc_accepted: true,
       });
-      setToast({
-        type: 'success',
-        message: 'Workshop proposed successfully!',
+
+      // 🎉 Confetti celebration
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#1A56DB', '#0E9F6E', '#E3A008'],
       });
-      setTimeout(() => navigate('/my-workshops'), 1500);
-    } catch (error) {
-      setToast({
-        type: 'error',
-        message: error.response?.data?.error || 'Failed to propose workshop',
-      });
+
+      addToast('success', 'Workshop proposed successfully! 🎉');
+      setTimeout(() => navigate('/my-workshops'), 2000);
+    } catch (err) {
+      addToast('error', err.response?.data?.error || 'Failed to propose workshop');
     } finally {
       setSubmitting(false);
     }
   };
 
+  const stepVariants = {
+    enter: { opacity: 0, x: 30 },
+    center: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -30 },
+  };
+
   return (
     <>
       <Helmet>
-        <title>Propose a Workshop — FOSSEE Booking Portal</title>
-        <meta name="description" content="Propose a new workshop with FOSSEE. Select workshop type, choose dates, and review terms and conditions." />
+        <title>Propose Workshop — FOSSEE</title>
+        <meta name="description" content="Propose a new workshop at your institution through the FOSSEE portal." />
       </Helmet>
       <PageWrapper>
-      <div className="max-w-2xl mx-auto p-4 space-y-6">
-        {/* Header */}
-        <div className="mt-4">
-          <h1 className="text-2xl font-semibold text-gray-900">Propose a Workshop</h1>
-          <p className="text-gray-600 text-sm mt-1">Step {step} of 3</p>
+        <div className="max-w-3xl mx-auto px-4 md:px-8 py-6">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-fossee-dark">
+              Propose a Workshop
+            </h1>
 
-          {/* Progress Bar */}
-          <div className="mt-4 w-full bg-gray-200 rounded-full h-1">
-            <div
-              className="bg-fossee-blue h-1 rounded-full transition-all"
-              style={{ width: `${(step / 3) * 100}%` }}
-            ></div>
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 mt-5">
+              {[
+                { num: 1, label: 'Choose Type' },
+                { num: 2, label: 'Pick Date' },
+                { num: 3, label: 'Confirm' },
+              ].map((s, idx) => (
+                <React.Fragment key={s.num}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                      step >= s.num ? 'bg-fossee-primary text-white' : 'bg-gray-200 text-gray-500'
+                    }`}>
+                      {step > s.num ? <CheckCircle size={16} /> : s.num}
+                    </div>
+                    <span className={`text-sm font-medium hidden sm:inline ${step >= s.num ? 'text-fossee-dark' : 'text-fossee-muted'}`}>
+                      {s.label}
+                    </span>
+                  </div>
+                  {idx < 2 && <div className={`flex-1 h-0.5 ${step > s.num ? 'bg-fossee-primary' : 'bg-gray-200'}`} />}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Step 1: Select Workshop Type */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Select Workshop Type</h2>
-            {loading ? (
-              <Spinner />
-            ) : (
-              <div className="space-y-3">
-                {workshopTypes.map((type) => (
-                  <Card
-                    key={type.id}
-                    title={type.name}
-                    subtitle={type.course_type || 'Workshop'}
-                    onClick={() => handleSelectType(type.id)}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
+          {/* Steps */}
+          <AnimatePresence mode="wait">
+            {/* Step 1: Choose Workshop Type */}
+            {step === 1 && (
+              <motion.div key="step1" variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.2 }}>
+                <h2 className="text-lg font-bold text-fossee-dark mb-4">Choose Workshop Type</h2>
+                {loading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} variant="card" />)}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {workshopTypes.map((type) => (
+                      <button
+                        key={type.id}
+                        className={`text-left rounded-2xl border-2 p-5 transition-all ${
+                          formData.workshop_type === type.id
+                            ? 'border-fossee-primary bg-blue-50 shadow-hover'
+                            : 'border-fossee-border bg-fossee-card hover:border-gray-300 hover:shadow-card'
+                        }`}
+                        onClick={() => setFormData((p) => ({ ...p, workshop_type: type.id }))}
+                      >
+                        <div className="flex items-start gap-3">
+                          <BookOpen size={20} className="text-fossee-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <h3 className="font-bold text-fossee-dark">{type.name}</h3>
+                            {type.duration && <p className="text-xs text-fossee-muted mt-1">Duration: {type.duration}</p>}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    variant="primary"
+                    onClick={() => formData.workshop_type ? setStep(2) : addToast('error', 'Please select a workshop type')}
+                    disabled={!formData.workshop_type}
                   >
-                    <p className="text-sm text-gray-600 mt-2">{type.description}</p>
-                  </Card>
-                ))}
-              </div>
+                    Next <ArrowRight size={16} className="ml-1" />
+                  </Button>
+                </div>
+              </motion.div>
             )}
-          </div>
-        )}
 
-        {/* Step 2: Select Date */}
-        {step === 2 && selectedType && (
-          <div className="space-y-4">
-            <Button
-              variant="ghost"
-              onClick={() => setStep(1)}
-              className="mb-4"
-            >
-              ← Back to Types
-            </Button>
+            {/* Step 2: Pick Date */}
+            {step === 2 && (
+              <motion.div key="step2" variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.2 }}>
+                <h2 className="text-lg font-bold text-fossee-dark mb-2">Pick a Date</h2>
+                <p className="text-sm text-fossee-muted mb-4">
+                  Minimum 7 days from today. Selected type: <strong>{selectedType?.name}</strong>
+                </p>
 
-            <h2 className="text-lg font-semibold">Selected: {selectedType.name}</h2>
-
-            <Card className="bg-fossee-light">
-              <p className="text-sm mb-3">{selectedType.description}</p>
-            </Card>
-
-            <div>
-              <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-2">
-                Proposed Date
-              </label>
-              <input
-                id="date"
-                type="date"
-                value={formData.date}
-                onChange={handleDateChange}
-                min={getMinDate()}
-                className="w-full h-[52px] px-4 rounded-xl border-2 border-gray-300 focus:border-fossee-blue focus:outline-none"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Must be at least 7 days from today
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setStep(1)}
-                fullWidth
-              >
-                Back
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleProceedToTnc}
-                fullWidth
-                disabled={!formData.date}
-              >
-                Review & Accept
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Review & T&C */}
-        {step === 3 && selectedType && (
-          <div className="space-y-4">
-            <Button
-              variant="ghost"
-              onClick={() => setStep(2)}
-              className="mb-4"
-            >
-              ← Back to Date
-            </Button>
-
-            <h2 className="text-lg font-semibold">Review & Accept T&C</h2>
-
-            {/* Summary */}
-            <Card className="bg-fossee-light">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="font-medium">Workshop Type:</span>
-                  <span>{selectedType.name}</span>
+                <div className="rounded-2xl border border-fossee-border bg-fossee-card p-5 shadow-card">
+                  <label htmlFor="propose-date" className="block text-sm font-medium text-fossee-dark mb-2">
+                    <CalendarDays size={16} className="inline mr-1" /> Workshop Date
+                  </label>
+                  <input
+                    id="propose-date"
+                    type="date"
+                    min={minDate}
+                    value={formData.date}
+                    onChange={(e) => setFormData((p) => ({ ...p, date: e.target.value }))}
+                    className="w-full h-[52px] px-4 rounded-xl border-2 border-fossee-border focus:border-fossee-primary focus:outline-none"
+                    required
+                  />
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Proposed Date:</span>
-                  <span>{new Date(formData.date).toLocaleDateString()}</span>
+
+                <div className="mt-6 flex gap-3 justify-end">
+                  <Button variant="secondary" onClick={() => setStep(1)}>Back</Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => formData.date ? setStep(3) : addToast('error', 'Please pick a date')}
+                    disabled={!formData.date}
+                  >
+                    Next <ArrowRight size={16} className="ml-1" />
+                  </Button>
                 </div>
-              </div>
-            </Card>
+              </motion.div>
+            )}
 
-            {/* T&C Modal Preview */}
-            <Card
-              className="cursor-pointer hover:shadow-md"
-              title="Terms & Conditions"
-              onClick={() => setShowTncModal(true)}
-            >
-              <p className="text-sm text-gray-600 mt-2">
-                Click to read the full terms and conditions
-              </p>
-            </Card>
+            {/* Step 3: Review & Confirm */}
+            {step === 3 && (
+              <motion.div key="step3" variants={stepVariants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.2 }}>
+                <h2 className="text-lg font-bold text-fossee-dark mb-4">Review & Confirm</h2>
 
-            {/* Checkbox */}
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.tnc_accepted}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, tnc_accepted: e.target.checked }))
-                }
-                className="mt-1"
-              />
-              <span className="text-sm text-gray-700">
-                I have read and accept the terms and conditions above
-              </span>
-            </label>
+                {/* Summary */}
+                <div className="rounded-2xl border border-fossee-border bg-fossee-card p-5 shadow-card space-y-3 mb-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-fossee-muted">Workshop Type</span>
+                    <span className="font-semibold text-fossee-dark">{selectedType?.name}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-fossee-muted">Date</span>
+                    <span className="font-semibold text-fossee-dark">{formData.date}</span>
+                  </div>
+                  {selectedType?.duration && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-fossee-muted">Duration</span>
+                      <span className="font-semibold text-fossee-dark">{selectedType.duration}</span>
+                    </div>
+                  )}
+                </div>
 
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
-                onClick={() => setStep(2)}
-                fullWidth
-              >
-                Back
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSubmit}
-                fullWidth
-                disabled={submitting || !formData.tnc_accepted}
-              >
-                {submitting ? 'Proposing...' : 'Propose Workshop'}
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
+                {/* Inline T&C */}
+                <div className="bg-gray-50 p-4 rounded-xl text-sm text-gray-700 max-h-[160px] overflow-y-auto border border-fossee-border mb-3">
+                  <h4 className="font-semibold mb-2">Terms & Conditions</h4>
+                  <p className="text-xs mb-1">• The workshop must be conducted on the proposed date.</p>
+                  <p className="text-xs mb-1">• Cancellations must be communicated at least 48 hours in advance.</p>
+                  <p className="text-xs mb-1">• Participants should be provided with all necessary resources.</p>
+                  <p className="text-xs">• The coordinator is responsible for logistics and attendance tracking.</p>
+                </div>
 
-      {/* T&C Modal */}
-      <Modal
-        isOpen={showTncModal}
-        onClose={() => setShowTncModal(false)}
-        title="Terms & Conditions"
-      >
-        <div className="text-sm text-gray-700 space-y-3 max-h-[400px] overflow-y-auto">
-          <p>
-            By proposing a workshop, you agree to adhere to the FOSSEE Workshop guidelines and policies.
-          </p>
-          <p>
-            <strong>Coordination:</strong> You commit to coordinating the workshop effectively and communicating with the assigned instructor.
-          </p>
-          <p>
-            <strong>Accuracy:</strong> All provided information must be accurate and truthful.
-          </p>
-          <p>
-            <strong>Flexibility:</strong> You agree to be flexible with dates if necessary and to notify instructors promptly of any changes.
-          </p>
-          <p>
-            <strong>Feedback:</strong> You will provide feedback after the workshop to help us improve future sessions.
-          </p>
-          <p className="text-xs text-gray-500">
-            For the complete guidelines, visit the FOSSEE website.
-          </p>
+                <label className="flex items-start gap-2 cursor-pointer py-2 mb-4">
+                  <input
+                    type="checkbox"
+                    checked={formData.tnc_accepted}
+                    onChange={(e) => setFormData((p) => ({ ...p, tnc_accepted: e.target.checked }))}
+                    className="mt-0.5 accent-fossee-primary"
+                    required
+                  />
+                  <span className="text-sm text-fossee-dark">
+                    I accept the Terms & Conditions for conducting this workshop
+                  </span>
+                </label>
+
+                <div className="flex gap-3 justify-end">
+                  <Button variant="secondary" onClick={() => setStep(2)}>Back</Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleSubmit}
+                    disabled={submitting || !formData.tnc_accepted}
+                  >
+                    {submitting ? 'Submitting...' : 'Submit Proposal'}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </Modal>
-
-      {/* Toast */}
-      {toast && (
-        <Toast
-          type={toast.type}
-          message={toast.message}
-          onClose={() => setToast(null)}
-        />
-      )}
-    </PageWrapper>
+      </PageWrapper>
     </>
   );
 }

@@ -96,12 +96,19 @@ const AuthProvider = ({ children }) => {
    */
   const register = async (userData) => {
     try {
-      const response = await client.post('/auth/register/', userData);
+      // Backend serializers explicitly expect 'phone', not 'phone_number'
+      const payload = {
+        ...userData,
+        phone: userData.phone_number
+      };
+      const response = await client.post('/auth/register/', payload);
       return { success: true, message: response.data?.message };
     } catch (err) {
       return {
         success: false,
-        error: 'Registration failed. Check your inputs.',
+        error: err.response?.data?.errors 
+          ? Object.values(err.response.data.errors).flat().join(' | ')
+          : 'Registration failed. Check your inputs.',
       };
     }
   };

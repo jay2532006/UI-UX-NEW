@@ -59,12 +59,12 @@ class RegisterView(APIView):
 
         user = User.objects.create_user(
             username=d['email'], email=d['email'], password=d['password'],
-            first_name=d['first_name'], last_name=d['last_name'], is_active=False,
+            first_name=d['first_name'], last_name=d['last_name'], is_active=True,
         )
         Profile.objects.create(
             user=user, title=d['title'], institute=d['institute'],
             department=d['department'], phone_number=d['phone'], state=d['state'],
-            position=d['position'], activation_key=key, is_email_verified=False,
+            position=d['position'], activation_key=key, is_email_verified=True,
         )
         # Attempt activation email — failure is logged, never surfaces to client
         _send_mail_safe('send_activation_email', user.email, key)

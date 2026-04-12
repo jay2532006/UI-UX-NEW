@@ -27,7 +27,7 @@ export default function InstructorDashboard() {
     try {
       setLoading(true);
       const res = await client.get('/workshops/instructor/');
-      setWorkshops(res.data);
+      setWorkshops(res.data.results || []);
     } catch {
       addToast('error', 'Failed to load workshops');
     } finally {

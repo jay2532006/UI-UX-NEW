@@ -21,7 +21,8 @@
     "react-helmet-async": "^3.0.0",
     "react-router-dom": "^6.30.3",
     "react-simple-maps": "^3.0.0",
-    "recharts": "^3.8.1"
+    "recharts": "^3.8.1",
+    "prop-types": "^15.8.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",

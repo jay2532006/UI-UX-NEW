@@ -70,7 +70,7 @@ export default function StatisticsPage() {
   // CSV download
   const handleDownloadCSV = () => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    window.location.href = `${baseUrl}/statistics/csv/`;
+    window.location.href = `${baseUrl}/api/statistics/csv/`;
   };
 
   return (

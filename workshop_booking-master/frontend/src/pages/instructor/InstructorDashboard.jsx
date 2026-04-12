@@ -95,7 +95,11 @@ export default function InstructorDashboard() {
                   <motion.div
                     key={ws.id}
                     layout
-                    className="rounded-2xl border border-amber-200 bg-amber-50/30 p-4 md:p-5 shadow-card"
+                    className="rounded-2xl border border-amber-200 bg-amber-50/30 p-4 md:p-5 shadow-card cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => navigate(`/workshop/${ws.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/workshop/${ws.id}`); }}
                   >
                     <div className="flex justify-between items-start gap-3 mb-3">
                       <div className="flex-1 min-w-0">
@@ -122,19 +126,19 @@ export default function InstructorDashboard() {
                           <span className="text-sm text-fossee-dark font-medium flex-1">
                             {confirmAction.action === 'accept' ? 'Accept this workshop?' : 'Reject this workshop?'}
                           </span>
-                          <Button variant="primary" onClick={() => handleAction(ws.id, confirmAction.action)} className="text-xs px-3 py-1.5">
+                          <Button variant="primary" onClick={(e) => { e.stopPropagation(); handleAction(ws.id, confirmAction.action); }} className="text-xs px-3 py-1.5">
                             Yes
                           </Button>
-                          <Button variant="ghost" onClick={() => setConfirmAction(null)} className="text-xs px-3 py-1.5">
+                          <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setConfirmAction(null); }} className="text-xs px-3 py-1.5">
                             Cancel
                           </Button>
                         </motion.div>
                       ) : (
                         <motion.div key="actions" className="flex gap-2 mt-2">
-                          <Button variant="primary" onClick={() => setConfirmAction({ id: ws.id, action: 'accept' })} className="flex-1 text-sm">
+                          <Button variant="primary" onClick={(e) => { e.stopPropagation(); setConfirmAction({ id: ws.id, action: 'accept' }); }} className="flex-1 text-sm">
                             <Check size={16} className="mr-1" /> Accept
                           </Button>
-                          <Button variant="danger" onClick={() => setConfirmAction({ id: ws.id, action: 'reject' })} className="flex-1 text-sm">
+                          <Button variant="danger" onClick={(e) => { e.stopPropagation(); setConfirmAction({ id: ws.id, action: 'reject' }); }} className="flex-1 text-sm">
                             <X size={16} className="mr-1" /> Reject
                           </Button>
                         </motion.div>

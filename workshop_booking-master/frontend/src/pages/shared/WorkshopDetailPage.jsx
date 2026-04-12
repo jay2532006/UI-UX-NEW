@@ -52,7 +52,7 @@ export default function WorkshopDetailPage() {
     }
   };
 
-  const typeName = workshop?.workshop_type?.name || workshop?.workshop_type_detail?.name || 'Workshop';
+  const typeName = workshop?.workshop_type_name || workshop?.workshop_type?.name || workshop?.workshop_type_detail?.name || 'Workshop';
 
   if (loading) {
     return (
@@ -136,7 +136,7 @@ export default function WorkshopDetailPage() {
                       <div>
                         <p className="text-sm font-medium text-fossee-dark">Coordinator</p>
                         <p className="text-sm text-fossee-muted">
-                          {workshop.coordinator?.first_name} {workshop.coordinator?.last_name}
+                          {workshop.coordinator_name || `${workshop.coordinator?.first_name || ''} ${workshop.coordinator?.last_name || ''}`.trim() || '—'}
                         </p>
                       </div>
                     </div>

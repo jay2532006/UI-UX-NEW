@@ -69,8 +69,8 @@ export default function StatisticsPage() {
 
   // CSV download
   const handleDownloadCSV = () => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
-    window.location.href = `${baseUrl}/api/statistics/csv/`;
+    // client.defaults.baseURL implicitly contains the safe '/api' suffix.
+    window.location.href = `${client.defaults.baseURL}/statistics/csv/`;
   };
 
   return (

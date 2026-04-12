@@ -104,10 +104,10 @@ export default function InstructorDashboard() {
                     <div className="flex justify-between items-start gap-3 mb-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-base text-fossee-dark truncate">
-                          {ws.workshop_type?.name || ws.workshop_type_detail?.name || 'Workshop'}
+                          {ws.workshop_type_name || ws.workshop_type_detail?.name || ws.workshop_type?.name || 'Workshop'}
                         </h3>
                         <p className="text-sm text-fossee-muted">
-                          {ws.coordinator?.first_name || 'Coordinator'} · {formatDate(ws.date)}
+                          {ws.coordinator_name || ws.coordinator?.first_name || 'Coordinator'} · {formatDate(ws.date)}
                         </p>
                       </div>
                       <WorkshopStatusBadge status={ws.status} />
@@ -173,7 +173,7 @@ export default function InstructorDashboard() {
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-base text-fossee-dark truncate">
-                          {ws.workshop_type?.name || ws.workshop_type_detail?.name || 'Workshop'}
+                          {ws.workshop_type_name || ws.workshop_type_detail?.name || ws.workshop_type?.name || 'Workshop'}
                         </h3>
                         <div className="flex items-center gap-2 text-sm text-fossee-muted mt-1">
                           <CalendarDays size={14} /> {formatDate(ws.date)}

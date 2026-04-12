@@ -34,7 +34,8 @@ export default function ProposeWorkshopPage() {
   const fetchTypes = useCallback(async () => {
     try {
       const res = await client.get('/workshop-types/');
-      setWorkshopTypes(res.data.results || []);
+      const data = Array.isArray(res.data) ? res.data : (res.data.results || []);
+      setWorkshopTypes(data);
     } catch {
       addToast('error', 'Failed to load workshop types');
     } finally {

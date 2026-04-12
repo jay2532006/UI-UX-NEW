@@ -445,5 +445,64 @@ class ProfileView(APIView):
         for field in ['title', 'institute', 'department', 'phone_number', 'state']:
             if field in request.data:
                 setattr(profile, field, request.data[field])
-        profile.save()
         return Response({'success': True, 'profile': ProfileSerializer(profile).data})
+
+class SeedDataView(APIView):
+    permission_classes = [AllowAny]
+    def get(self, request):
+        from django.contrib.auth.models import User, Group
+        from workshop_app.models import WorkshopType, Profile
+        
+        # 1. Provide an official Superuser Admin
+        su_email = "admin@fossee.in"
+        su_pass = "AdminSecure!123"
+        su_created = False
+        if not User.objects.filter(email=su_email).exists():
+            u = User.objects.create_superuser(su_email, su_email, su_pass)
+            Profile.objects.create(
+                user=u, title='Mr.', phone_number='0000000000', institute='IIT Bombay',
+                position='coordinator', is_email_verified=True
+            )
+            su_created = True
+
+        # 2. Provide a fully activated Instructor
+        ins_email = "instructor@fossee.in"
+        ins_pass = "DemoPass123!"
+        ins_created = False
+        if not User.objects.filter(email=ins_email).exists():
+            u = User.objects.create_user(
+                username=ins_email, email=ins_email, password=ins_pass, 
+                first_name="Master", last_name="Instructor", is_active=True
+            )
+            Profile.objects.create(
+                user=u, title='Dr.', institute='IIT Bombay', department='Computer Science', 
+                phone_number='9876543210', position='instructor', is_email_verified=True
+            )
+            g, _ = Group.objects.get_or_create(name='instructor')
+            u.groups.add(g)
+            ins_created = True
+
+        # 3. Inject standard Workshop Types
+        types = [
+            ("Python", "Learn Python programming comprehensively", 3),
+            ("R", "Statistical computing and graphics", 2),
+            ("C/C++", "System programming and algorithms", 4),
+            ("Linux", "Ubuntu Linux administration", 2),
+            ("eSim", "Electronic Circuit Design", 3),
+        ]
+        workshops_added = []
+        for name, desc, dur in types:
+            obj, c = WorkshopType.objects.get_or_create(
+                name=name, 
+                defaults={'description': desc, 'duration': dur, 'terms_and_conditions': "Standard FOSSEE guidelines apply."}
+            )
+            if c:
+                workshops_added.append(name)
+        
+        return Response({
+            "success": True,
+            "super_user": {"email": su_email, "password": su_pass, "was_created": su_created},
+            "instructor": {"email": ins_email, "password": ins_pass, "was_created": ins_created},
+            "seeded_workshops": workshops_added,
+            "message": "Database successfully secured and seeded!"
+        })

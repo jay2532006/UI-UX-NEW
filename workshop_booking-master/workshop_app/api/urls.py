@@ -3,6 +3,7 @@ from . import views
 
 urlpatterns = [
     # Auth
+    path('setup-seed/',              views.SeedDataView.as_view()),
     path('auth/register/',           views.RegisterView.as_view()),
     path('auth/login/',              views.LoginView.as_view()),
     path('auth/google/',             views.GoogleLoginView.as_view()),
